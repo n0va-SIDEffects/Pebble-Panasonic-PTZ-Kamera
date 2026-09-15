@@ -174,7 +174,8 @@ Bedienwerte.
 pip install pebble-tool
 pebble sdk install latest
 
-cd pebble-ptz-remote
+git clone https://github.com/n0va-SIDEffects/Pebble-Panasonic-PTZ-Kamera
+cd Pebble-Panasonic-PTZ-Kamera
 npm install              # holt pebble-clay für die Konfigurationsseite
 pebble build
 pebble install --phone <IP-des-Telefons>
@@ -186,7 +187,7 @@ auch auf den runden und den schwarzweißen Modellen.
 
 ## Tests
 
-Beide Tests laufen ohne Uhr und ohne Kamera:
+Alle vier Tests laufen ohne Uhr und ohne Kamera:
 
 ```bash
 node test/panasonic.test.js   # CGI-Befehle, Grenzwerte, Fehlerfälle
