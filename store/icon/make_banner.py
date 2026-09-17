@@ -104,29 +104,6 @@ def main(logo_pfad=None):
     bogen(img)
     d = ImageDraw.Draw(img)
 
-    # Der Screenshot rechts belegt rund 250 Pixel. Alles Geschriebene
-    # bleibt links davon - Text unter einem Bild ist der haeufigste Fehler
-    # bei solchen Bannern.
-    TEXT_MAX = 452
-
-    icon = Image.open(os.path.join(HIER, "icon_144_alpha.png")).convert("RGBA")
-    icon = icon.resize((88, 88), Image.LANCZOS)
-    img.alpha_composite(icon, (40, 30))
-
-    d.text((142, 38), "PTZ Remote", font=schrift(F_BOLD, 40), fill=LIGHT)
-    d.text((144, 86), "Panasonic PTZ from your wrist",
-           font=schrift(F_REG, 16), fill=ACCENT)
-
-    zeilen = [
-        "Buttons, or tilt the watch to drive the camera",
-        "\u2014 select acts as a dead-man switch.",
-        "Presets, up to 8 cameras, still preview.",
-    ]
-    y = 150
-    for z in zeilen:
-        d.text((42, y), z, font=schrift(F_REG, 15), fill=MUTED)
-        y += 24
-
     # Die Time 2 ist schwarz und der Grund ist dunkel - ohne Hilfe
     # verschwindet das Gehaeuse darin. Ein weicher heller Schein dahinter
     # loest sie vom Hintergrund, ohne den dunklen Gesamteindruck zu stoeren.
@@ -138,6 +115,29 @@ def main(logo_pfad=None):
             fill=(150, 168, 195, 46))
         img.alpha_composite(fleck.filter(ImageFilter.GaussianBlur(58)))
 
+    # Masse nach references/assets.md, "Banner-Layout, das funktioniert
+    # hat": Icon 120, Titel 52 pt, Untertitel 20 pt, zwei Zeilen Slogan
+    # 15 pt, Logo 185 px unten links.
+    #
+    # Eine Abweichung: der Titel steht auf 46 pt. Die 52 pt der Vorlage
+    # gelten fuer einen kurzen Namen; "PTZ Remote" misst dort 355 Pixel und
+    # liefe neben dem 120er Icon in die Uhr hinein; 45 pt lassen
+    # ausserdem eine Handbreit Luft zu ihr. Alles Geschriebene
+    # bleibt links von ihr - Text unter einem Bild ist der haeufigste Fehler
+    # bei solchen Bannern.
+    icon = Image.open(os.path.join(HIER, "icon_144_alpha.png")).convert("RGBA")
+    icon = icon.resize((120, 120), Image.LANCZOS)
+    img.alpha_composite(icon, (32, 26))
+
+    d.text((164, 46), "PTZ Remote", font=schrift(F_BOLD, 45), fill=LIGHT)
+    d.text((166, 106), "Panasonic PTZ from your wrist",
+           font=schrift(F_REG, 20), fill=ACCENT)
+
+    for i, zeile in enumerate([
+            "Buttons or wrist tilt, with a dead-man switch.",
+            "Presets, 8 cameras, still preview."]):
+        d.text((42, 162 + i * 24), zeile, font=schrift(F_REG, 15), fill=MUTED)
+
     # Der Screenshot sitzt in der Uhr, nicht in einem nackten Rahmen.
     shot_pfad = os.path.join(WURZEL, "release", "screenshots_emery", "1_motion.png")
     if not os.path.exists(shot_pfad):
@@ -146,7 +146,7 @@ def main(logo_pfad=None):
     # Hoeher als das Banner, damit die Armbaender oben und unten sauber aus
     # dem Bild laufen - ein Band, das mittendrin aufhoert, sieht abgeschnitten
     # aus statt angeschnitten.
-    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=396)
+    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=340)
     schein((W - uhr.width // 2 - 40, H // 2), int(uhr.width * 0.62))
     versatz = (H - uhr.height) // 2
     if versatz < 0:
