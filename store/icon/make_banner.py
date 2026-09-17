@@ -16,7 +16,7 @@ Zwei Vorgaben des Nutzers, die fuer jedes kuenftige Banner gelten:
 Layout: dunkler Grund, ein grosser Schwenkbogen als Hintergrundmotiv,
 links Icon, Titel und Slogan, rechts die Uhr mit dem Screenshot.
 """
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import os, sys, math
 
 W, H = 720, 320
@@ -64,9 +64,9 @@ def bogen(img):
 
 
 # Displayflaeche in pebble_watch.png, ausgemessen an der freigestellten
-# Aufnahme: links, oben, rechts, unten.
-DISPLAY = (34, 138, 299, 449)
-ECKRADIUS = 20
+# Aufnahme: links, oben, rechts, unten. Gilt fuer die Pebble Time 2.
+DISPLAY = (97, 302, 436, 704)
+ECKRADIUS = 26
 
 
 def uhr_mit_screenshot(shot, hoehe):
@@ -127,6 +127,17 @@ def main(logo_pfad=None):
         d.text((42, y), z, font=schrift(F_REG, 15), fill=MUTED)
         y += 24
 
+    # Die Time 2 ist schwarz und der Grund ist dunkel - ohne Hilfe
+    # verschwindet das Gehaeuse darin. Ein weicher heller Schein dahinter
+    # loest sie vom Hintergrund, ohne den dunklen Gesamteindruck zu stoeren.
+    def schein(mitte, radius):
+        fleck = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(fleck).ellipse(
+            [mitte[0] - radius, mitte[1] - int(radius * 1.25),
+             mitte[0] + radius, mitte[1] + int(radius * 1.25)],
+            fill=(150, 168, 195, 46))
+        img.alpha_composite(fleck.filter(ImageFilter.GaussianBlur(58)))
+
     # Der Screenshot sitzt in der Uhr, nicht in einem nackten Rahmen.
     shot_pfad = os.path.join(WURZEL, "release", "screenshots_emery", "1_motion.png")
     if not os.path.exists(shot_pfad):
@@ -135,7 +146,8 @@ def main(logo_pfad=None):
     # Hoeher als das Banner, damit die Armbaender oben und unten sauber aus
     # dem Bild laufen - ein Band, das mittendrin aufhoert, sieht abgeschnitten
     # aus statt angeschnitten.
-    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=372)
+    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=396)
+    schein((W - uhr.width // 2 - 40, H // 2), int(uhr.width * 0.62))
     versatz = (H - uhr.height) // 2
     if versatz < 0:
         uhr = uhr.crop((0, -versatz, uhr.width, -versatz + H))

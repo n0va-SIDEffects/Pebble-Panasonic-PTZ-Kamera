@@ -4,9 +4,17 @@ Stellt die Uhr aus einer Werbegrafik frei und vermisst ihre Displayflaeche.
 
     python3 store/icon/freistellen.py pebble_watch_quelle.png
 
-Schreibt `pebble_watch.png` (freigestellt, mit Alphakanal) und nennt die
-Koordinaten der Displayflaeche. Die gehoeren als DISPLAY nach
-make_banner.py - dort wird der Screenshot hineingesetzt.
+Schreibt `pebble_watch.png` (freigestellt, mit Alphakanal), schlaegt
+Koordinaten fuer die Displayflaeche vor und legt ein Pruefbild daneben.
+Die Koordinaten gehoeren als DISPLAY nach make_banner.py.
+
+**Das Pruefbild immer ansehen.** Die automatische Suche findet das Display
+als dunkle Insel, die ein hellerer Rahmen vom Armband trennt. Bei einer
+Uhr mit hellem Metallgehaeuse klappt das; bei der schwarzen Time 2 sind
+Gehaeuse und Display fast gleich dunkel, dort liefert sie Unsinn. Dann die
+Kanten am vergroesserten Bild ablesen und uebergeben:
+
+    python3 store/icon/freistellen.py bild.png --display 97 302 436 704
 
 Der Hintergrund wird nicht ueber einen Farbschwellwert entfernt, sondern
 vom Bildrand aus geflutet. Sonst verschwindet das schwarze Display gleich
@@ -78,8 +86,24 @@ def display_vermessen(uhr):
     return min(xs), min(ys), max(xs), max(ys)
 
 
+def pruefbild(uhr, kasten, ziel):
+    from PIL import ImageDraw
+    k = uhr.copy()
+    ImageDraw.Draw(k).rectangle(list(kasten), outline=(255, 0, 255, 255), width=3)
+    grund = Image.new("RGBA", uhr.size, (245, 245, 245, 255))
+    grund.alpha_composite(k)
+    grund.convert("RGB").save(ziel)
+
+
 def main():
-    quelle = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HIER, "pebble_watch_quelle.png")
+    args = sys.argv[1:]
+    manuell = None
+    if "--display" in args:
+        i = args.index("--display")
+        manuell = tuple(int(v) for v in args[i + 1:i + 5])
+        args = args[:i] + args[i + 5:]
+
+    quelle = args[0] if args else os.path.join(HIER, "pebble_watch_quelle.png")
     if not os.path.exists(quelle):
         raise SystemExit("Quellbild fehlt: " + quelle)
 
@@ -98,10 +122,25 @@ def main():
     uhr.save(ziel)
     print("geschrieben:", ziel, uhr.size)
 
-    x0, y0, x1, y1 = display_vermessen(uhr)
+    if manuell:
+        kasten = manuell
+        print("Displayflaeche wie uebergeben.")
+    else:
+        kasten = display_vermessen(uhr)
+        print("Displayflaeche automatisch gesucht - Pruefbild ansehen!")
+
+    x0, y0, x1, y1 = kasten
+    pruef = os.path.join(HIER, "pebble_watch_pruefbild.png")
+    pruefbild(uhr, kasten, pruef)
+
+    breite, hoehe = x1 - x0 + 1, y1 - y0 + 1
     print(f"\nDISPLAY = ({x0}, {y0}, {x1}, {y1})"
-          f"   # {x1-x0+1} x {y1-y0+1}, Verhaeltnis {(x1-x0+1)/(y1-y0+1):.3f}")
-    print("Diesen Wert in make_banner.py eintragen.")
+          f"   # {breite} x {hoehe}, Verhaeltnis {breite/hoehe:.3f}")
+    print("Pruefbild:", pruef)
+    if not 0.78 <= breite / hoehe <= 0.98:
+        print("ACHTUNG: Das Verhaeltnis passt zu keiner Pebble "
+              "(erwartet ungefaehr 0.88). Vermutlich danebengegriffen.")
+    print("Wert in make_banner.py als DISPLAY eintragen.")
 
 
 if __name__ == "__main__":

@@ -63,10 +63,16 @@ Zwei Vorgaben stecken fest im Skript und gelten für jedes künftige Banner:
   der Screenshot wird in ihre Displayfläche gesetzt, mit abgerundeten Ecken.
   Die Armbänder laufen absichtlich oben und unten aus dem Bild.
 
-  Für eine andere Uhr-Grafik: Datei als `pebble_watch_quelle.png` ablegen,
-  dann `python3 store/icon/freistellen.py`. Das Skript entfernt den
-  Hintergrund, schneidet zu und nennt die Displaykoordinaten, die als
-  `DISPLAY` nach `make_banner.py` gehören.
+  Gezeigt wird eine **Pebble Time 2**. Für eine andere Uhr-Grafik: Datei als
+  `pebble_watch_quelle.png` ablegen, dann `python3 store/icon/freistellen.py`.
+  Das Skript entfernt den Hintergrund, schneidet zu und schlägt die
+  Displaykoordinaten vor, die als `DISPLAY` nach `make_banner.py` gehören.
+
+  **Das Prüfbild ansehen.** Die automatische Suche erkennt das Display als
+  dunkle Insel, die ein hellerer Rahmen vom Armband trennt — bei der
+  schwarzen Time 2 sind Gehäuse und Display fast gleich dunkel, dort liefert
+  sie Unsinn. Deshalb wurden die Kanten hier von Hand abgelesen und per
+  `--display 97 302 436 704` übergeben.
 - Das **Logo ist immer dabei**, unten links, 185 px breit, volle Deckkraft.
   Fehlt `store/icon/side_effects_logo.png`, bricht das Skript ab — ein
   Banner ohne Logo soll gar nicht erst entstehen.
