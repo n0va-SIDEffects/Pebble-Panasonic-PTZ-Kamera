@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Baut ein Store-Banner (720 x 320) mit gezeichneter Uhr.
+Baut ein Store-Banner (720 x 320) mit einer Uhr, in deren Display der
+Screenshot sitzt.
 
     python3 make_banner.py --shot store/screenshots_en/1_status.png \
         --icon store/icon/icon_512_transparent.png \
@@ -11,14 +12,20 @@ Baut ein Store-Banner (720 x 320) mit gezeichneter Uhr.
         --line "Favourites - Dictation - Reminders" \
         --accent "#e57cd8" --out store/icon/banner_720x320.png
 
---tilt 0 stellt die Uhr gerade, --round zeichnet ein rundes Gehaeuse
-(chalk, gabbro), --screen-w und --watch-x verschieben sie. Masse und Farben
-des Gehaeuses stehen in references/assets.md; dieses Skript ist ihre
-Umsetzung. Fehlt das Logo, bricht es ab - ein Banner ohne Logo soll nicht
-entstehen.
+Standard ist eine freigestellte Aufnahme aus ../assets (--watch
+pebble_time_2 oder pebble_time_steel). `--watch drawn` zeichnet das
+Gehaeuse stattdessen, was ohne Aufnahme auskommt und jede Plattform
+bedienen kann; `--round` macht daraus ein rundes Gehaeuse (chalk, gabbro).
+
+--tilt 0 stellt die Uhr gerade, --watch-x verschiebt sie, --watch-h setzt
+die Hoehe der freigestellten Uhr, --screen-w die Displaybreite der
+gezeichneten. Masse und Farben stehen in references/assets.md; dieses
+Skript ist ihre Umsetzung. Fehlt das Logo, bricht es ab - ein Banner ohne
+Logo soll nicht entstehen.
 """
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import argparse
+import json
 import os
 
 W, H = 720, 320
@@ -33,6 +40,8 @@ KORPUS = (26, 29, 36)
 SCHEIBE = (8, 9, 12)
 TASTE = (96, 102, 115)
 BAND = (52, 58, 72)
+
+ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
 
 F_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 F_REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -52,6 +61,46 @@ def breite(text, pfad, groesse):
 def hex_zu_rgb(wert):
     wert = wert.lstrip("#")
     return tuple(int(wert[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def uhr_aus_aufnahme(shot, name, hoehe):
+    """
+    Screenshot in die Displayflaeche einer freigestellten Aufnahme setzen.
+
+    Seitenverhaeltnis bleibt erhalten; der schmale Rest oben und unten
+    bleibt schwarz und faellt auf dem schwarzen Display nicht auf. Die
+    Ecken werden mit dem in uhren.json hinterlegten Radius maskiert, sonst
+    legt sich ein hartes Rechteck ueber die Rundung.
+    """
+    if not os.path.isdir(ASSETS):
+        raise SystemExit(
+            "Uhren-Verzeichnis nicht gefunden: " + ASSETS +
+            "\nMit --assets <pfad> auf den Ordner zeigen, in dem uhren.json liegt.")
+    with open(os.path.join(ASSETS, "uhren.json"), encoding="utf-8") as f:
+        uhren = json.load(f)
+    if name not in uhren:
+        raise SystemExit("Unbekannte Uhr: " + name + "\nBekannt: " +
+                         ", ".join(k for k in uhren if not k.startswith("_")) + ", drawn")
+    meta = uhren[name]
+
+    uhr = Image.open(os.path.join(ASSETS, meta["datei"])).convert("RGBA")
+    x0, y0, x1, y1 = meta["display"]
+    dw, dh = x1 - x0 + 1, y1 - y0 + 1
+
+    innen = Image.new("RGBA", (dw, dh), (0, 0, 0, 255))
+    sh = shot.convert("RGBA").resize((dw, max(1, round(dw * shot.height / shot.width))),
+                                     Image.LANCZOS)
+    if sh.height > dh:
+        schnitt = (sh.height - dh) // 2
+        sh = sh.crop((0, schnitt, sh.width, schnitt + dh))
+    innen.alpha_composite(sh, (0, (dh - sh.height) // 2))
+
+    maske = Image.new("L", (dw, dh), 0)
+    ImageDraw.Draw(maske).rounded_rectangle([0, 0, dw - 1, dh - 1], meta["eckradius"], fill=255)
+    uhr.paste(innen, (x0, y0), maske)
+
+    uhr = uhr.resize((max(1, round(uhr.width * hoehe / uhr.height)), hoehe), Image.LANCZOS)
+    return uhr, meta.get("gehaeuse", "")
 
 
 def uhr_zeichnen(shot, schirm_b=150, rund=False):
@@ -151,11 +200,21 @@ def main():
     p.add_argument("--line", action="append", default=[])
     p.add_argument("--accent", default="#f07a28")
     p.add_argument("--tilt", type=float, default=9)
-    p.add_argument("--round", action="store_true")
+    p.add_argument("--watch", default="pebble_time_2",
+                   help="pebble_time_2 (Standard), pebble_time_steel oder drawn")
+    p.add_argument("--watch-h", type=int, default=340,
+                   help="Hoehe der freigestellten Uhr")
+    p.add_argument("--round", action="store_true",
+                   help="rundes Gehaeuse, nur mit --watch drawn")
     p.add_argument("--screen-w", type=int, default=150)
     p.add_argument("--watch-x", type=int, default=590)
+    p.add_argument("--assets", help="Ordner mit uhren.json und den Uhrenbildern")
     p.add_argument("--out", default="banner_720x320.png")
     a = p.parse_args()
+
+    if a.assets:
+        global ASSETS
+        ASSETS = a.assets
 
     if not os.path.exists(a.logo):
         raise SystemExit("Logo fehlt: " + a.logo + "\nEs gehoert auf jedes Banner.")
@@ -176,7 +235,21 @@ def main():
     ld.arc([cx - r2, cy - r2, cx + r2, cy + r2], 228, 312, fill=accent + (255,), width=3 * F)
     img.alpha_composite(lein.resize((W, H), Image.LANCZOS))
 
-    uhr = uhr_zeichnen(Image.open(a.shot), a.screen_w, a.round)
+    if a.watch == "drawn":
+        uhr = uhr_zeichnen(Image.open(a.shot), a.screen_w, a.round)
+        gehaeuse = ""
+    else:
+        uhr, gehaeuse = uhr_aus_aufnahme(Image.open(a.shot), a.watch, a.watch_h)
+
+    # Ein schwarzes Gehaeuse verschwindet auf dunklem Grund. Ein weicher
+    # heller Schein dahinter loest es, ohne den dunklen Eindruck aufzugeben.
+    if gehaeuse == "schwarz":
+        fleck = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        r = int(uhr.width * 0.62)
+        ImageDraw.Draw(fleck).ellipse(
+            [a.watch_x - r, H // 2 - int(r * 1.25), a.watch_x + r, H // 2 + int(r * 1.25)],
+            fill=(150, 168, 195, 46))
+        img.alpha_composite(fleck.filter(ImageFilter.GaussianBlur(58)))
 
     # Schatten in derselben Form
     schatten = Image.new("RGBA", (W, H), (0, 0, 0, 0))

@@ -4,6 +4,7 @@
 # Werte dieses Projekts.
 cd "$(dirname "$0")/../.." || exit 1
 python3 store/icon/make_banner.py \
+    --assets skill-beitraege/assets \
     --shot store/release/screenshots_emery/1_motion.png \
     --icon store/icon/icon_144_alpha.png \
     --logo store/icon/side_effects_logo.png \
