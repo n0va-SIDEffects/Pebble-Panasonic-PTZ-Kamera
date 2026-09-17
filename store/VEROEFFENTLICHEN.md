@@ -58,8 +58,15 @@ python3 store/icon/make_banner.py     # nimmt store/release/screenshots_emery/1_
 
 Zwei Vorgaben stecken fest im Skript und gelten für jedes künftige Banner:
 
-- Der Screenshot wird **in einer Pebble Time 2** gezeigt, nicht als nacktes
-  Rechteck. Die Bandansätze laufen absichtlich oben und unten aus dem Bild.
+- Der Screenshot wird **in einer Uhr** gezeigt, nicht als nacktes Rechteck.
+  Grundlage ist die freigestellte Aufnahme in `store/icon/pebble_watch.png`;
+  der Screenshot wird in ihre Displayfläche gesetzt, mit abgerundeten Ecken.
+  Die Armbänder laufen absichtlich oben und unten aus dem Bild.
+
+  Für eine andere Uhr-Grafik: Datei als `pebble_watch_quelle.png` ablegen,
+  dann `python3 store/icon/freistellen.py`. Das Skript entfernt den
+  Hintergrund, schneidet zu und nennt die Displaykoordinaten, die als
+  `DISPLAY` nach `make_banner.py` gehören.
 - Das **Logo ist immer dabei**, unten links, 185 px breit, volle Deckkraft.
   Fehlt `store/icon/side_effects_logo.png`, bricht das Skript ab — ein
   Banner ohne Logo soll gar nicht erst entstehen.

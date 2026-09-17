@@ -6,8 +6,9 @@ Baut das Store-Banner (720 x 320).
 
 Zwei Vorgaben des Nutzers, die fuer jedes kuenftige Banner gelten:
 
-1. Der Screenshot wird **in einer Pebble Time 2** gezeigt, nicht als
-   nacktes Rechteck.
+1. Der Screenshot wird **in einer Uhr** gezeigt, nicht als nacktes
+   Rechteck. Grundlage ist die freigestellte Aufnahme des Nutzers in
+   `pebble_watch.png`; der Screenshot wird in ihre Displayflaeche gesetzt.
 2. Das SIDE effect's Logo ist **immer** dabei, unten links, 185 Pixel
    breit, in voller Deckkraft. Fehlt die Datei, bricht das Skript ab -
    ein Banner ohne Logo soll gar nicht erst entstehen.
@@ -62,60 +63,40 @@ def bogen(img):
     img.alpha_composite(lein.resize((W, H), Image.LANCZOS))
 
 
-def pebble_time_2(shot, band=16):
+# Displayflaeche in pebble_watch.png, ausgemessen an der freigestellten
+# Aufnahme: links, oben, rechts, unten.
+DISPLAY = (34, 138, 299, 449)
+ECKRADIUS = 20
+
+
+def uhr_mit_screenshot(shot, hoehe):
     """
-    Zeichnet den Screenshot in ein stilisiertes Pebble-Time-2-Gehaeuse.
+    Setzt den Screenshot in die Displayflaeche der fotografierten Uhr.
 
-    Rechteckiges Gehaeuse mit Metallrand, ein Knopf links, drei rechts,
-    dazu die Bandansaetze. Dreifach ueberabgetastet, sonst zacken die
-    Rundungen.
-
-    `band` ist die Laenge der Bandansaetze. Wird sie so gross gewaehlt,
-    dass das Band oben und unten aus dem Banner laeuft, wirkt der Anschnitt
-    gewollt - ein Band, das mitten im Bild aufhoert, sieht abgeschnitten aus.
+    Der Screenshot wird auf die Displaybreite gebracht und mittig gesetzt;
+    sein Seitenverhaeltnis bleibt erhalten, der schmale Rest oben und unten
+    bleibt schwarz und faellt auf dem ohnehin schwarzen Display nicht auf.
+    Die abgerundeten Ecken des Displays werden nachgebildet, sonst legt sich
+    ein hartes Rechteck ueber die Rundung.
     """
-    f = 3
-    bezel_x, bezel_y = 12, 14
+    uhr = Image.open(os.path.join(HIER, "pebble_watch.png")).convert("RGBA")
 
-    W_ = shot.width + 2 * bezel_x
-    H_ = shot.height + 2 * bezel_y
-    ges_h = H_ + 2 * band
+    x0, y0, x1, y1 = DISPLAY
+    dw, dh = x1 - x0 + 1, y1 - y0 + 1
 
-    lein = Image.new("RGBA", (W_ * f, ges_h * f), (0, 0, 0, 0))
-    d = ImageDraw.Draw(lein)
+    innen = Image.new("RGBA", (dw, dh), (0, 0, 0, 255))
+    sh = shot.resize((dw, max(1, round(dw * shot.height / shot.width))), Image.LANCZOS)
+    if sh.height > dh:
+        schnitt = (sh.height - dh) // 2
+        sh = sh.crop((0, schnitt, sh.width, schnitt + dh))
+    innen.alpha_composite(sh.convert("RGBA"), (0, (dh - sh.height) // 2))
 
-    # Bandansaetze oben und unten, etwas schmaler als das Gehaeuse
-    band_w = int(W_ * 0.54)
-    bx = (W_ - band_w) // 2
-    d.rounded_rectangle([bx * f, 0, (bx + band_w) * f, (band + 14) * f],
-                        int(6 * f), fill=(48, 53, 62, 255))
-    d.rounded_rectangle([bx * f, (ges_h - band - 14) * f, (bx + band_w) * f, ges_h * f],
-                        int(6 * f), fill=(48, 53, 62, 255))
+    maske = Image.new("L", (dw, dh), 0)
+    ImageDraw.Draw(maske).rounded_rectangle([0, 0, dw - 1, dh - 1], ECKRADIUS, fill=255)
+    uhr.paste(innen, (x0, y0), maske)
 
-    # Gehaeuse
-    oben = band * f
-    unten = (band + H_) * f
-    d.rounded_rectangle([0, oben, W_ * f, unten], int(14 * f), fill=(86, 93, 104, 255))
-    # Schmaler heller Streifen oben als Lichtkante des Metalls
-    d.rounded_rectangle([0, oben, W_ * f, oben + int(5 * f)], int(5 * f),
-                        fill=(122, 130, 142, 255))
-    # Displayfassung
-    d.rounded_rectangle([int(6 * f), oben + int(7 * f), (W_ - 6) * f, unten - int(7 * f)],
-                        int(9 * f), fill=(18, 20, 24, 255))
-
-    # Knoepfe: einer links (Back), drei rechts (Auf, Select, Ab)
-    mitte = oben + (unten - oben) // 2
-    knopf = (150, 158, 170, 255)
-    d.rounded_rectangle([-int(3 * f), mitte - int(13 * f), int(3 * f), mitte + int(13 * f)],
-                        int(3 * f), fill=knopf)
-    for dy in (-34, 0, 34):
-        y0 = mitte + int((dy - 11) * f)
-        y1 = mitte + int((dy + 11) * f)
-        d.rounded_rectangle([(W_ - 3) * f, y0, (W_ + 3) * f, y1], int(3 * f), fill=knopf)
-
-    gehaeuse = lein.resize((W_, ges_h), Image.LANCZOS)
-    gehaeuse.alpha_composite(shot.convert("RGBA"), (bezel_x, band + bezel_y))
-    return gehaeuse
+    breite = max(1, round(uhr.width * hoehe / uhr.height))
+    return uhr.resize((breite, hoehe), Image.LANCZOS)
 
 
 def main(logo_pfad=None):
@@ -146,20 +127,20 @@ def main(logo_pfad=None):
         d.text((42, y), z, font=schrift(F_REG, 15), fill=MUTED)
         y += 24
 
-    # Der Screenshot sitzt in einer Uhr, nicht in einem nackten Rahmen.
+    # Der Screenshot sitzt in der Uhr, nicht in einem nackten Rahmen.
     shot_pfad = os.path.join(WURZEL, "release", "screenshots_emery", "1_motion.png")
     if not os.path.exists(shot_pfad):
         raise SystemExit("Screenshot fehlt: " + shot_pfad)
 
-    shot = Image.open(shot_pfad).convert("RGBA")
-    shot = shot.resize((int(shot.width * 0.78), int(shot.height * 0.78)), Image.LANCZOS)
-    # Bandansaetze absichtlich laenger als das Banner hoch ist, damit sie
-    # oben und unten sauber aus dem Bild laufen.
-    uhr = pebble_time_2(shot, band=70)
-    if uhr.height > H:
-        ueber = (uhr.height - H) // 2
-        uhr = uhr.crop((0, ueber, uhr.width, ueber + H))
-    img.alpha_composite(uhr, (W - uhr.width - 44, (H - uhr.height) // 2))
+    # Hoeher als das Banner, damit die Armbaender oben und unten sauber aus
+    # dem Bild laufen - ein Band, das mittendrin aufhoert, sieht abgeschnitten
+    # aus statt angeschnitten.
+    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=372)
+    versatz = (H - uhr.height) // 2
+    if versatz < 0:
+        uhr = uhr.crop((0, -versatz, uhr.width, -versatz + H))
+        versatz = 0
+    img.alpha_composite(uhr, (W - uhr.width - 40, versatz))
 
     # Das Logo gehoert auf jedes Banner, immer an dieselbe Stelle.
     if logo_pfad is None:
