@@ -1,5 +1,12 @@
 # PTZ Remote — Panasonic-Kameras von der Pebble Time 2 steuern
 
+**Version 0.9 (Beta).** Die Kamerasteuerung ist an einer AW-UE100 auf
+echter Hardware erprobt. Das Vorschaubild ist noch nicht an einer Kamera
+verifiziert und deshalb ab Werk ausgeschaltet.
+
+Die Oberfläche der App ist englisch (der Pebble Store ist es auch); diese
+Dokumentation bleibt deutsch.
+
 Eine Watchapp für die **Pebble Time 2** (Plattform `emery`), mit der sich
 Panasonic-PTZ-Kameras der AW-Serie direkt vom Handgelenk aus fahren lassen —
 über die Tasten oder über die Neigung der Uhr.
@@ -49,14 +56,14 @@ den Anschlag fahren lässt, ist das die sichere Variante.
 
 ### Neigungssteuerung
 
-Erreichbar über **Menü → Neigung**.
+Erreichbar über **Menü → Motion**.
 
 | Taste | Wirkung |
 |---|---|
 | **Select** halten | Totmannschalter: nur währenddessen fährt die Kamera |
 | **Auf / Ab** halten | Zoom Tele / Weitwinkel |
 | **Back** kurz | zurück |
-| **Back** lang | Achsen umschalten: Pan+Tilt → Pan+Zoom → nur Tilt |
+| **Back** lang | Achsen umschalten: PAN + TILT → PAN + ZOOM → TILT ONLY |
 
 Der **Nullpunkt ist die Haltung im Moment des Drückens**, nicht eine feste
 Achse im Raum. Die Kamera lässt sich also aus jeder bequemen Armhaltung heraus
@@ -83,7 +90,7 @@ nicht.
 
 ![](docs/screenshots/vorschau_stufen.png)
 
-Ein- und ausschalten lässt es sich **im Menü der Uhr** unter *Vorschau* und
+Ein- und ausschalten lässt es sich **im Menü der Uhr** unter *Preview* und
 auf der Konfigurationsseite. Ausgeschaltet geht kein einziges Byte für Bilder
 über die Funkstrecke.
 
@@ -152,18 +159,20 @@ am Pult steht, soll sehen können, warum nichts passiert.
 
 ### 2. In der Pebble-App auf dem Telefon
 
-Unter **Einstellungen** der Watchapp:
+Unter **Einstellungen** der Watchapp (englisch):
 
-- **Kamera 1–8**: Name, IP-Adresse, Port, optional Benutzer und Passwort.
+- **Camera 1–8**: Name, IP-Adresse, Port, optional Benutzer und Passwort.
   Leere Blöcke tauchen auf der Uhr nicht auf.
-- **Tempo** (1–5): wie viel von der Maximalgeschwindigkeit ausgereizt wird.
-  Für Fahrten im laufenden Betrieb sind 1 bis 2 meist genug.
-- **Empfindlichkeit** (1–10): 1 verlangt rund 40° Neigung für Vollausschlag,
+- **Speed level** (1–5): wie viel von der Maximalgeschwindigkeit ausgereizt
+  wird. Für Fahrten im laufenden Betrieb sind 1 bis 2 meist genug.
+- **Sensitivity** (1–10): 1 verlangt rund 40° Neigung für Vollausschlag,
   10 schon rund 12°.
-- **Totzone** (20–200): wie ruhig die Hand sein darf, bevor etwas passiert.
-- **Preset-Zählung**: Panasonic zählt intern ab 0, Preset 1 auf der Uhr ist
+- **Dead zone** (20–200): wie ruhig die Hand sein darf, bevor etwas passiert.
+- **Preset numbering**: Panasonic zählt intern ab 0, Preset 1 auf der Uhr ist
   also normalerweise Kamera-Speicher 0. Falls die Kamera anders zählt,
   hier umstellen.
+- **Enable preview** / **Image size**: Vorschaubild ein- oder ausschalten
+  und seine Größe wählen.
 
 Die Kameradaten bleiben auf dem Telefon; auf die Uhr wandern nur die
 Bedienwerte.
@@ -181,9 +190,13 @@ pebble build
 pebble install --phone <IP-des-Telefons>
 ```
 
-Gebaut wird für `emery` (Pebble Time 2) sowie `basalt`, `chalk` und `diorite`.
-Das Layout richtet sich nach der tatsächlichen Bildschirmgröße, läuft also
-auch auf den runden und den schwarzweißen Modellen.
+Gebaut wird für `emery` (Pebble Time 2), `basalt` (Pebble Time) und
+`diorite` (Pebble 2). Das Layout richtet sich nach der tatsächlichen
+Bildschirmgröße und funktioniert auch ohne Farbe.
+
+Die runden Modelle (`chalk`) sind in 0.9 **nicht** dabei: dort bricht das
+Layout, Kameraname und Fußzeile werden beschnitten. Das braucht einen
+eigenen Entwurf, keine Anpassung.
 
 ## Tests
 

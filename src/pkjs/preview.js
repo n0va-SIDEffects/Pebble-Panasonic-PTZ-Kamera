@@ -304,7 +304,7 @@ Preview.prototype.fetch = function (camera, base, resolution, cb) {
 
   function tryNext() {
     if (attempt >= urls.length) {
-      cb(null, 'Kein Bild von der Kamera');
+      cb(null, 'No image from camera');
       return;
     }
     var which = order[attempt];
@@ -320,16 +320,16 @@ Preview.prototype.fetch = function (camera, base, resolution, cb) {
           self.preferred = which;
           cb(bytes, null);
         } else {
-          cb(null, 'Bilddaten unbrauchbar');
+          cb(null, 'Image data unusable');
         }
       } else if (xhr.status === 401) {
-        cb(null, 'Anmeldung abgelehnt');
+        cb(null, 'Login rejected');
       } else {
         tryNext();
       }
     };
     xhr.onerror = function () { tryNext(); };
-    xhr.ontimeout = function () { cb(null, 'Bild: keine Antwort'); };
+    xhr.ontimeout = function () { cb(null, 'Image: no response'); };
 
     try {
       if (camera.user) {
@@ -367,7 +367,7 @@ Preview.prototype.capture = function (camera, base, width, resolution) {
   this.aborted = false;
 
   var self = this;
-  this.status('Bild wird geholt');
+  this.status('Fetching image');
 
   this.fetch(camera, base, resolution, function (bytes, err) {
     if (err || self.aborted) {
@@ -382,7 +382,7 @@ Preview.prototype.capture = function (camera, base, width, resolution) {
       self.busy = false;
       console.log('Vorschau: ' + e.message + ' (' + bytes.length + ' Byte, ' +
                   'Beginn ' + bytes[0] + ' ' + bytes[1] + ')');
-      self.status('Bild: ' + e.message, true);
+      self.status('Image: ' + e.message, true);
       return;
     }
     if (self.aborted) { self.busy = false; return; }
@@ -421,7 +421,7 @@ Preview.prototype.transmit = function (w, h, palette, data) {
   }, function (err) {
     self.busy = false;
     console.log('Vorschau: Bildkopf abgelehnt: ' + JSON.stringify(err));
-    self.status('Bild nicht zugestellt', true);
+    self.status('Image not delivered', true);
   });
 
   function sendChunk(index, retries) {
@@ -448,7 +448,7 @@ Preview.prototype.transmit = function (w, h, palette, data) {
         setTimeout(function () { sendChunk(index, retries + 1); }, 120);
       } else {
         self.busy = false;
-        self.status('Bild abgebrochen', true);
+        self.status('Image aborted', true);
       }
     });
   }

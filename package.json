@@ -1,7 +1,7 @@
 {
   "name": "ptz-remote",
   "author": "SIDE effect's",
-  "version": "1.0",
+  "version": "0.9",
   "keywords": [
     "pebble-app",
     "ptz",
@@ -21,7 +21,6 @@
     "targetPlatforms": [
       "emery",
       "basalt",
-      "chalk",
       "diorite"
     ],
     "watchapp": {

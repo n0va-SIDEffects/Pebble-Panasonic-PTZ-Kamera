@@ -7,6 +7,7 @@
 
 var Clay = require('pebble-clay');
 var clayConfig = require('./config');
+var customClay = require('./custom-clay');
 var Panasonic = require('./panasonic');
 var Preview = require('./preview');
 
@@ -32,7 +33,7 @@ var PREVIEW_SIZES = [
 // Muss zu PtzStatus passen.
 var STATUS = { UNKNOWN: 0, OK: 1, BUSY: 2, ERROR: 3, NOCONFIG: 4 };
 
-var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+var clay = new Clay(clayConfig, customClay, { autoHandleEvents: false });
 
 var settings = {};
 var cameras = [];
@@ -174,7 +175,7 @@ function sendCameraList() {
 
   if (cameras.length === 0) {
     lastStatus = -1;
-    report(STATUS.NOCONFIG, 'Keine Kamera eingerichtet');
+    report(STATUS.NOCONFIG, 'No camera configured');
   }
 }
 
@@ -210,7 +211,7 @@ function sendWatchSettings() {
 function handleMove(payload) {
   var l = link();
   if (!l) {
-    report(STATUS.NOCONFIG, 'Keine Kamera eingerichtet');
+    report(STATUS.NOCONFIG, 'No camera configured');
     return;
   }
   var pan   = payload.PAN   !== undefined ? payload.PAN   : 50;
@@ -255,7 +256,7 @@ function handleMessage(payload) {
     case CMD.PRESET_STORE:
       if (l) {
         l.storePreset(payload.VALUE || 0, presetOffset());
-        report(STATUS.BUSY, 'Preset ' + ((payload.VALUE || 0) + 1) + ' gespeichert');
+        report(STATUS.BUSY, 'Preset ' + ((payload.VALUE || 0) + 1) + ' stored');
       }
       break;
 
@@ -298,7 +299,7 @@ function handleMessage(payload) {
         abortPreviews();
       } else if (moving) {
         // Waehrend einer Fahrt waere das Bild ohnehin verwischt.
-        report(STATUS.BUSY, 'Bild erst im Stillstand');
+        report(STATUS.BUSY, 'Image only when stopped');
       } else {
         var p = preview();
         var cam = cameras[activeCam];
@@ -337,7 +338,7 @@ function watchdog() {
 
   console.log('Wachhund: keine Meldung von der Uhr, halte an');
   stopAllCameras();
-  report(STATUS.ERROR, 'Verbindung unterbrochen');
+  report(STATUS.ERROR, 'Connection lost');
 }
 
 // ---------------------------------------------------------------------------

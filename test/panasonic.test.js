@@ -167,7 +167,7 @@ test('Abgelehnte Anmeldung wird gemeldet', function (done) {
   p.setAxes(60, 50, 50, 50);
   afterQueue(function () {
     assert.strictEqual(sent[0].user, 'admin', 'Benutzer muss mitgehen');
-    assert.ok(result && result.ok === false && /Anmeldung/.test(result.text));
+    assert.ok(result && result.ok === false && /Login/.test(result.text));
     done();
   });
 });

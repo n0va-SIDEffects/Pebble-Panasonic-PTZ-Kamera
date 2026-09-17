@@ -157,7 +157,7 @@ static void draw(Layer *layer, GContext *ctx) {
   }
 
   graphics_context_set_text_color(ctx, GColorBlack);
-  const char *state_text = running ? "FÄHRT" : (s_held ? "BEREIT" : "HALTEN");
+  const char *state_text = running ? "MOVING" : (s_held ? "READY" : "HOLD");
   graphics_draw_text(ctx, state_text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
                      GRect(pad, b.size.h - foot_h, b.size.w - 2 * pad, 28),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);

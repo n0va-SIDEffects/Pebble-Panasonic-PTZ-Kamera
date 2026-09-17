@@ -92,7 +92,7 @@ Panasonic.prototype.pump = function () {
   var base = this.baseUrl();
   if (!base) {
     this.queue = [];
-    if (this.onResult) this.onResult(false, 'Keine Adresse');
+    if (this.onResult) this.onResult(false, 'No address');
     return;
   }
 
@@ -109,12 +109,12 @@ Panasonic.prototype.pump = function () {
     self.busy = false;
     var body = (xhr.responseText || '').trim();
     if (xhr.status === 401) {
-      self.report(false, 'Anmeldung abgelehnt');
+      self.report(false, 'Login rejected');
     } else if (xhr.status !== 200) {
       self.report(false, 'HTTP ' + xhr.status);
     } else if (/^er[0-9]/i.test(body)) {
       // er1 = unbekannter Befehl, er2 = Kamera beschaeftigt, er3 = ausserhalb
-      self.report(false, 'Kamera: ' + body);
+      self.report(false, 'Camera: ' + body);
     } else {
       self.report(true, body);
     }
@@ -122,12 +122,12 @@ Panasonic.prototype.pump = function () {
   };
   xhr.onerror = function () {
     self.busy = false;
-    self.report(false, 'Nicht erreichbar');
+    self.report(false, 'Not reachable');
     self.pump();
   };
   xhr.ontimeout = function () {
     self.busy = false;
-    self.report(false, 'Keine Antwort');
+    self.report(false, 'No response');
     self.pump();
   };
 
@@ -140,7 +140,7 @@ Panasonic.prototype.pump = function () {
     xhr.send();
   } catch (err) {
     this.busy = false;
-    this.report(false, 'Fehler: ' + err.message);
+    this.report(false, 'Error: ' + err.message);
   }
 };
 

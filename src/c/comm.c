@@ -30,7 +30,7 @@ static uint8_t s_queue_head, s_queue_count;
 
 static AppTimer *s_timer;
 static PtzStatus s_status = PTZ_STATUS_UNKNOWN;
-static char s_message[MSG_LEN] = "Verbinde ...";
+static char s_message[MSG_LEN] = "Connecting ...";
 static char s_cam_names[CAM_NAMES_LEN];
 static uint8_t s_cam_count;
 static CommUpdateHandler s_update_handler;
@@ -189,7 +189,7 @@ static void outbox_failed(DictionaryIterator *iter, AppMessageResult reason, voi
   }
   if (reason == APP_MSG_NOT_CONNECTED) {
     s_status = PTZ_STATUS_ERROR;
-    strncpy(s_message, "Kein Telefon", MSG_LEN - 1);
+    strncpy(s_message, "No phone", MSG_LEN - 1);
     notify_update();
   }
 }
@@ -253,7 +253,7 @@ static void inbox_received(DictionaryIterator *iter, void *ctx) {
 }
 
 static void inbox_dropped(AppMessageResult reason, void *ctx) {
-  APP_LOG(APP_LOG_LEVEL_WARNING, "Nachricht verworfen: %d", (int)reason);
+  APP_LOG(APP_LOG_LEVEL_WARNING, "Message dropped: %d", (int)reason);
 }
 
 // ---------------------------------------------------------------------------
@@ -338,7 +338,7 @@ const char *comm_get_cam_name(uint8_t index) {
     p++;
   }
   if (current != index || !*p) {
-    snprintf(name, sizeof(name), "Kamera %d", index + 1);
+    snprintf(name, sizeof(name), "Camera %d", index + 1);
     return name;
   }
   uint8_t i = 0;
@@ -346,7 +346,7 @@ const char *comm_get_cam_name(uint8_t index) {
     name[i++] = *p++;
   }
   name[i] = '\0';
-  return i > 0 ? name : "Kamera";
+  return i > 0 ? name : "Camera";
 }
 
 bool comm_is_moving(void) {

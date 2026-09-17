@@ -146,7 +146,7 @@ static void draw(Layer *layer, GContext *ctx) {
   const PtzSettings *cfg = settings_get();
   if (axis == PTZ_AXIS_FOCUS) {
     snprintf(line, sizeof(line), "FOCUS %s",
-             s_dir > 0 ? "FERN" : (s_dir < 0 ? "NAH" : ""));
+             s_dir > 0 ? "FAR" : (s_dir < 0 ? "NEAR" : ""));
   } else {
     snprintf(line, sizeof(line), "%s  %d/5", ptz_axis_name(axis), cfg->speed);
   }
@@ -160,7 +160,7 @@ static void draw(Layer *layer, GContext *ctx) {
   const PtzStatus st = comm_get_status();
   const char *hint = (st == PTZ_STATUS_NOCONFIG || st == PTZ_STATUS_ERROR)
       ? comm_get_message()
-      : "SEL Achse · LANG Menü";
+      : "SEL axis \u00b7 HOLD menu";
   graphics_draw_text(ctx, hint, fonts_get_system_font(FONT_KEY_GOTHIC_14),
                      GRect(pad, b.size.h - foot_h + 26, b.size.w - 2 * pad, 18),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);

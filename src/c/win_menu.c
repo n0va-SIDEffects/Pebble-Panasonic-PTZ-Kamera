@@ -43,8 +43,8 @@ static void confirm_unload(Window *window) {
 static void confirm_push(uint8_t preset) {
   s_confirm_preset = preset;
   snprintf(s_confirm_body, sizeof(s_confirm_body),
-           "Preset %d mit der aktuellen Kameraposition überschreiben?"
-           "\n\nSELECT = ja\nBACK = nein",
+           "Overwrite preset %d with the current\n camera position?"
+           "\n\nSELECT = yes\nBACK = no",
            preset + 1);
   if (!s_confirm_window) {
     s_confirm_window = window_create();
@@ -129,13 +129,13 @@ static uint16_t cam_rows(MenuLayer *menu, uint16_t section, void *ctx) {
 
 static void cam_draw(GContext *ctx, const Layer *cell, MenuIndex *idx, void *data) {
   if (comm_get_cam_count() == 0) {
-    menu_cell_basic_draw(ctx, cell, "Keine Kamera",
-                         "In der Telefon-App einrichten", NULL);
+    menu_cell_basic_draw(ctx, cell, "No camera",
+                         "Set up in the phone app", NULL);
     return;
   }
   const char *name = comm_get_cam_name((uint8_t)idx->row);
   const bool active = idx->row == settings_get()->active_cam;
-  menu_cell_basic_draw(ctx, cell, name, active ? "aktiv" : NULL, NULL);
+  menu_cell_basic_draw(ctx, cell, name, active ? "active" : NULL, NULL);
 }
 
 static void cam_select(MenuLayer *menu, MenuIndex *idx, void *ctx) {
@@ -202,15 +202,15 @@ static bool s_autofocus = true;
 static void refresh_subtitles(void) {
   snprintf(s_sub_gyro, sizeof(s_sub_gyro), "%s", gyro_axes_name((GyroAxes)settings_get()->gyro_axes));
   snprintf(s_sub_cam, sizeof(s_sub_cam), "%s", comm_get_cam_name(settings_get()->active_cam));
-  snprintf(s_sub_speed, sizeof(s_sub_speed), "Stufe %d von 5", settings_get()->speed);
-  snprintf(s_sub_focus, sizeof(s_sub_focus), "%s", s_autofocus ? "automatisch" : "manuell");
+  snprintf(s_sub_speed, sizeof(s_sub_speed), "Level %d of 5", settings_get()->speed);
+  snprintf(s_sub_focus, sizeof(s_sub_focus), "%s", s_autofocus ? "auto" : "manual");
   snprintf(s_sub_status, sizeof(s_sub_status), "%s", comm_get_message());
   if (preview_enabled()) {
-    static const char *groessen[] = { "klein", "mittel", "gross" };
-    snprintf(s_sub_preview, sizeof(s_sub_preview), "an, %s",
+    static const char *groessen[] = { "small", "medium", "large" };
+    snprintf(s_sub_preview, sizeof(s_sub_preview), "on, %s",
              groessen[settings_get()->preview_size % 3]);
   } else {
-    snprintf(s_sub_preview, sizeof(s_sub_preview), "aus");
+    snprintf(s_sub_preview, sizeof(s_sub_preview), "off");
   }
   if (s_menu_layer) {
     layer_mark_dirty(simple_menu_layer_get_layer(s_menu_layer));
@@ -254,17 +254,17 @@ static void menu_load(Window *window) {
   refresh_subtitles();
 
   s_items[0] = (SimpleMenuItem) {
-    .title = "Neigung", .subtitle = s_sub_gyro, .callback = item_gyro };
+    .title = "Motion", .subtitle = s_sub_gyro, .callback = item_gyro };
   s_items[1] = (SimpleMenuItem) {
-    .title = "Presets", .subtitle = "Abrufen, lang = speichern", .callback = item_preset };
+    .title = "Presets", .subtitle = "Recall, hold to store", .callback = item_preset };
   s_items[2] = (SimpleMenuItem) {
-    .title = "Kamera", .subtitle = s_sub_cam, .callback = item_cam };
+    .title = "Camera", .subtitle = s_sub_cam, .callback = item_cam };
   s_items[3] = (SimpleMenuItem) {
-    .title = "Tempo", .subtitle = s_sub_speed, .callback = item_speed };
+    .title = "Speed", .subtitle = s_sub_speed, .callback = item_speed };
   s_items[4] = (SimpleMenuItem) {
-    .title = "Fokus", .subtitle = s_sub_focus, .callback = item_focus };
+    .title = "Focus", .subtitle = s_sub_focus, .callback = item_focus };
   s_items[5] = (SimpleMenuItem) {
-    .title = "Vorschau", .subtitle = s_sub_preview, .callback = item_preview };
+    .title = "Preview", .subtitle = s_sub_preview, .callback = item_preview };
   s_items[6] = (SimpleMenuItem) {
     .title = "Status", .subtitle = s_sub_status, .callback = item_status };
 

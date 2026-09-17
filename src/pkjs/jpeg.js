@@ -108,7 +108,7 @@ BitReader.prototype.decodeHuffman = function (table) {
     }
     code = (code << 1) | this.nextBit();
   }
-  throw new JpegError('Ungueltiger Huffman-Code');
+  throw new JpegError('Invalid Huffman code');
 };
 
 /** Nach einem Restart-Marker sauber wieder aufsetzen. */
@@ -137,7 +137,7 @@ BitReader.prototype.restart = function () {
 function parseSegments(data) {
   var pos = 0;
   if (data[0] !== 0xFF || data[1] !== 0xD8) {
-    throw new JpegError('Kein JPEG (SOI fehlt)');
+    throw new JpegError('Not a JPEG');
   }
   pos = 2;
 
@@ -180,7 +180,7 @@ function parseSegments(data) {
         break;
 
       case 0xC2:
-        throw new JpegError('Progressives JPEG wird nicht unterstuetzt');
+        throw new JpegError('Progressive JPEG unsupported');
 
       case 0xC4:                                 // Huffman-Tabellen
         var h = segStart;
@@ -224,8 +224,8 @@ function parseSegments(data) {
     pos = segEnd;
   }
 
-  if (!frame) throw new JpegError('Bildkopf (SOF) fehlt');
-  if (scanOffset < 0) throw new JpegError('Bilddaten (SOS) fehlen');
+  if (!frame) throw new JpegError('Frame header missing');
+  if (scanOffset < 0) throw new JpegError('Scan data missing');
 
   return {
     frame: frame, quantTables: quantTables,
@@ -240,9 +240,9 @@ function readFrame(data, p) {
   var height = (data[p + 1] << 8) | data[p + 2];
   var width = (data[p + 3] << 8) | data[p + 4];
   var count = data[p + 5];
-  if (precision !== 8) throw new JpegError('Nur 8 Bit je Kanal');
+  if (precision !== 8) throw new JpegError('Only 8 bit per channel');
   if (count !== 1 && count !== 3) {
-    throw new JpegError('Unerwartete Kanalzahl: ' + count);
+    throw new JpegError('Unexpected channel count: ' + count);
   }
 
   var components = [];
@@ -252,7 +252,7 @@ function readFrame(data, p) {
     var comp = {
       id: data[o], h: data[o + 1] >> 4, v: data[o + 1] & 15, tq: data[o + 2]
     };
-    if (comp.h < 1 || comp.v < 1) throw new JpegError('Ungueltige Abtastung');
+    if (comp.h < 1 || comp.v < 1) throw new JpegError('Invalid sampling factor');
     if (comp.h > maxH) maxH = comp.h;
     if (comp.v > maxV) maxV = comp.v;
     components.push(comp);

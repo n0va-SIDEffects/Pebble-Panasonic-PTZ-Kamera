@@ -14,7 +14,7 @@ const char *gyro_axes_name(GyroAxes mode) {
   switch (mode) {
     case GYRO_AXES_PAN_TILT:  return "PAN + TILT";
     case GYRO_AXES_PAN_ZOOM:  return "PAN + ZOOM";
-    case GYRO_AXES_TILT_ONLY: return "NUR TILT";
+    case GYRO_AXES_TILT_ONLY: return "TILT ONLY";
     default:                  return "?";
   }
 }

@@ -3,3 +3,4 @@ node_modules/
 .lock-waf*
 *.pbw
 test/ergebnis.raw
+store/release/*.zip
