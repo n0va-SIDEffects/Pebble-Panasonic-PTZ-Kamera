@@ -253,7 +253,7 @@ def schraubendreher(laenge=130, griff="griff_rot"):
 """
 
 
-def loetkolben(laenge=190, kabel="M 0 6 C -46 34, -104 6, -150 44"):
+def loetkolben(laenge=190, kabel="M 0 6 C -40 30, -86 8, -128 40"):
     """
     Loetkolben, Spitze nach +x. Das Kabel ist das, was ihn auf einen Blick
     vom Schraubendreher unterscheidet - deshalb dick, dunkel und bis aus
@@ -386,7 +386,7 @@ def zettel(zufall, text_zeilen, breite=112, hoehe=86, akzent="#ffffff"):
 
 # --- Projektobjekte -------------------------------------------------------
 
-def projekt_theremin(akzent):
+def projekt_theremin(akzent, logo=""):
     """
     Selbstbau-Theremin: Holzkasten mit offener Platine, Stabantenne fuer
     die Tonhoehe, Schleifenantenne fuer die Lautstaerke. Die Stabantenne
@@ -448,6 +448,7 @@ def projekt_theremin(akzent):
       <circle cx="62" cy="22" r="14" fill="none" stroke="#586271" stroke-width="2"/>
       <line x1="62" y1="22" x2="53" y2="13" stroke="{akzent}" stroke-width="2.6" stroke-linecap="round"/>
     </g>
+    {logo}
     <circle cx="90" cy="40" r="4" fill="{akzent}"/>
     <circle cx="90" cy="40" r="9" fill="{akzent}" opacity="0.4" filter="url(#glimmen)"/>
   </g>
@@ -455,7 +456,7 @@ def projekt_theremin(akzent):
 """
 
 
-def projekt_ptz(akzent):
+def projekt_ptz(akzent, logo=""):
     """Panasonic-artige PTZ-Kamera, schraeg von vorn."""
     return f"""
 <g class="projekt" filter="url(#schatten_weich)">
@@ -480,13 +481,13 @@ def projekt_ptz(akzent):
   <!-- Tally -->
   <rect x="-16" y="-48" width="32" height="9" rx="4.5" fill="{akzent}"/>
   <rect x="-16" y="-48" width="32" height="9" rx="4.5" fill="{akzent}" filter="url(#glimmen)" opacity="0.8"/>
-  <!-- Beschriftung -->
-  <rect x="-52" y="22" width="40" height="8" rx="2" fill="#aab3bd" opacity="0.55"/>
+  <!-- Typenschild: hier traegt das Geraet das Logo -->
+  {logo}
 </g>
 """
 
 
-def projekt_helo(akzent):
+def projekt_helo(akzent, logo=""):
     """AJA-artiger Streaming-/Aufnahme-Recorder, halbe Rackbreite."""
     return f"""
 <g class="projekt" filter="url(#schatten_weich)">
@@ -525,9 +526,8 @@ def projekt_helo(akzent):
     <circle cx="36" cy="-8" r="12" fill="{akzent}" opacity="0.35" filter="url(#glimmen)"/>
     <circle cx="74" cy="-8" r="15" fill="#171c22" stroke="#3d454f" stroke-width="2"/>
     <path d="M 68 -15 L 82 -8 L 68 -1 Z" fill="#9aa4ae"/>
-    <rect x="22" y="14" width="28" height="12" rx="3" fill="#2a313a"/>
-    <rect x="58" y="14" width="28" height="12" rx="3" fill="#2a313a"/>
   </g>
+  {logo}
 </g>
 """
 
@@ -537,3 +537,191 @@ PROJEKTE = {
     "ptz": projekt_ptz,
     "helo": projekt_helo,
 }
+
+# Wo und wie das Logo auf dem jeweiligen Geraet sitzt - im Koordinaten-
+# system des Geraets, also mitgedreht. Die Stile stehen in
+# make_desk_banner.logo_auf_geraet().
+PROJEKT_LOGOPLATZ = {
+    "theremin": {"x": -56, "y": 24, "breite": 98, "stil": "gravur_holz"},
+    "ptz": {"x": -58, "y": 46, "breite": 62, "stil": "druck_dunkel"},
+    "helo": {"x": 20, "y": 10, "breite": 70, "stil": "aetzung_hell"},
+}
+
+
+# --- Weitere Werkzeuge ----------------------------------------------------
+# Alle zeichnen sich entlang +x um ihre Mitte, wie die festen Werkzeuge.
+
+def pinzette(laenge=120):
+    """Spitzpinzette, Spitzen nach +x."""
+    g = laenge / 120
+    return f"""
+<g class="werkzeug" transform="scale({g:.3f})" filter="url(#schatten_klein)">
+  <path d="M -60 -4 L 8 -9 L 58 -2.6 L 60 0 L 56 0.4 L 6 -4.6 L -60 -0.6 Z" fill="url(#stahl)"/>
+  <path d="M -60 4 L 8 9 L 58 2.6 L 60 0 L 56 -0.4 L 6 4.6 L -60 0.6 Z" fill="#9aa4ae"/>
+  <path d="M -60 -4 L 8 -9 L 8 -6.4 L -60 -1.6 Z" fill="#eaeff4" opacity="0.7"/>
+  <rect x="-62" y="-5" width="12" height="10" rx="4" fill="#5d666f"/>
+  <rect x="-30" y="-7" width="26" height="3" rx="1.5" fill="#000" opacity="0.18"/>
+</g>
+"""
+
+
+def seitenschneider(laenge=132):
+    """Seitenschneider, Schneide nach +x, Griffe nach -x."""
+    g = laenge / 132
+    return f"""
+<g class="werkzeug" transform="scale({g:.3f})" filter="url(#schatten_klein)">
+  <g transform="rotate(-9)">
+    <rect x="-70" y="-9" width="66" height="18" rx="9" fill="#c8302a"/>
+    <rect x="-70" y="-9" width="66" height="6" rx="5" fill="#fff" opacity="0.25"/>
+    <rect x="-68" y="-8" width="10" height="16" rx="5" fill="#8d201c"/>
+  </g>
+  <g transform="rotate(9)">
+    <rect x="-70" y="-9" width="66" height="18" rx="9" fill="#e0453c"/>
+    <rect x="-70" y="-9" width="66" height="6" rx="5" fill="#fff" opacity="0.3"/>
+    <rect x="-68" y="-8" width="10" height="16" rx="5" fill="#9c2620"/>
+  </g>
+  <path d="M -10 -13 L 34 -9 L 52 -2 L 52 2 L 34 9 L -10 13 Z" fill="url(#stahl)"/>
+  <path d="M -10 -13 L 34 -9 L 34 -5 L -10 -7 Z" fill="#fff" opacity="0.45"/>
+  <path d="M 34 -9 L 56 -1.6 L 56 1.6 L 34 9 Z" fill="#e6ebf0"/>
+  <circle cx="2" cy="0" r="7.5" fill="#7d868f"/>
+  <circle cx="2" cy="0" r="3.2" fill="#4c545d"/>
+</g>
+"""
+
+
+def entloetpumpe(laenge=140):
+    """Entloetpumpe, Spitze nach +x."""
+    g = laenge / 140
+    return f"""
+<g class="werkzeug" transform="scale({g:.3f})" filter="url(#schatten_klein)">
+  <rect x="-70" y="-13" width="112" height="26" rx="8" fill="#39424d"/>
+  <rect x="-70" y="-13" width="112" height="9" rx="6" fill="#fff" opacity="0.18"/>
+  <rect x="-66" y="-9" width="28" height="18" rx="5" fill="#e0e5eb"/>
+  <rect x="-34" y="-11" width="8" height="22" rx="3" fill="#cfd6de"/>
+  <rect x="-18" y="-10" width="44" height="20" rx="4" fill="#1d232b"/>
+  <g stroke="#59636e" stroke-width="1.4" opacity="0.8">
+    <line x1="-6" y1="-10" x2="-6" y2="10"/>
+    <line x1="6" y1="-10" x2="6" y2="10"/>
+  </g>
+  <rect x="42" y="-7" width="18" height="14" rx="4" fill="#b8c0c9"/>
+  <path d="M 60 -5 L 76 -2.2 L 76 2.2 L 60 5 Z" fill="#e6ebf0"/>
+</g>
+"""
+
+
+def bleistift(laenge=126):
+    """Angespitzter Bleistift, Spitze nach +x."""
+    g = laenge / 126
+    return f"""
+<g class="werkzeug" transform="scale({g:.3f})" filter="url(#schatten_klein)">
+  <rect x="-63" y="-7" width="106" height="14" rx="2" fill="#e8a723"/>
+  <rect x="-63" y="-7" width="106" height="4.5" rx="2" fill="#fff" opacity="0.35"/>
+  <rect x="-63" y="3" width="106" height="4" fill="#000" opacity="0.18"/>
+  <rect x="-63" y="-7" width="13" height="14" rx="2" fill="#cf5a52"/>
+  <rect x="-52" y="-7.5" width="6" height="15" fill="#b9c1ca"/>
+  <path d="M 43 -7 L 60 -2.4 L 60 2.4 L 43 7 Z" fill="#e6d3a8"/>
+  <path d="M 58 -1.8 L 64 0 L 58 1.8 Z" fill="#2c3138"/>
+</g>
+"""
+
+
+def krokokabel(laenge=150, bogen="M -70 -6 C -20 -34, 20 22, 70 -4"):
+    """Messkabel mit zwei Krokodilklemmen."""
+    g = laenge / 150
+    return f"""
+<g class="werkzeug" transform="scale({g:.3f})">
+  <path d="{bogen}" transform="translate(2,5)" fill="none" stroke="#000" stroke-width="7"
+        stroke-linecap="round" opacity="0.35"/>
+  <path d="{bogen}" fill="none" stroke="#c0392f" stroke-width="5" stroke-linecap="round"/>
+  <path d="{bogen}" transform="translate(0,-1.4)" fill="none" stroke="#e6635a" stroke-width="1.8"
+        stroke-linecap="round" opacity="0.8"/>
+  <g filter="url(#schatten_klein)">
+    <g transform="translate(-70,-6) rotate(160)">
+      <path d="M 0 -6 L 22 -3 L 34 0 L 22 3 L 0 6 Z" fill="#b9c1ca"/>
+      <path d="M 6 -6 L 22 -3.4 L 22 -0.6 L 6 -2 Z" fill="#eef2f6"/>
+      <rect x="-12" y="-7" width="14" height="14" rx="3" fill="#c0392f"/>
+    </g>
+    <g transform="translate(70,-4) rotate(-14)">
+      <path d="M 0 -6 L 22 -3 L 34 0 L 22 3 L 0 6 Z" fill="#b9c1ca"/>
+      <path d="M 6 -6 L 22 -3.4 L 22 -0.6 L 6 -2 Z" fill="#eef2f6"/>
+      <rect x="-12" y="-7" width="14" height="14" rx="3" fill="#c0392f"/>
+    </g>
+  </g>
+</g>
+"""
+
+
+def widerstaende(zufall, anzahl=4):
+    """Ein paar lose Widerstaende."""
+    teile = []
+    for _ in range(anzahl):
+        x, y = zufall.uniform(-30, 30), zufall.uniform(-16, 16)
+        dreh = zufall.uniform(0, 180)
+        ringe = "".join(
+            f'<rect x="{-5 + i*3.6:.1f}" y="-4" width="2.4" height="8" fill="{f}"/>'
+            for i, f in enumerate(zufall.sample(["#2b2118", "#a8332a", "#d98b2b", "#c9b03a"], 3)))
+        teile.append(
+            f'<g transform="translate({x:.1f},{y:.1f}) rotate({dreh:.0f})">'
+            f'<line x1="-22" y1="0" x2="22" y2="0" stroke="#b9c1ca" stroke-width="1.8"/>'
+            f'<rect x="-10" y="-4.6" width="20" height="9.2" rx="4" fill="#d8c9a6"/>{ringe}</g>')
+    return f'<g class="kram" filter="url(#schatten_klein)">{"".join(teile)}</g>'
+
+
+def kabelbinder(zufall):
+    """Aufgerollter Kabelbinder."""
+    dreh = zufall.uniform(0, 360)
+    return f"""
+<g class="kram" transform="rotate({dreh:.0f})" filter="url(#schatten_klein)">
+  <path d="M -18 8 C -26 -14, 10 -22, 16 -2 C 20 12, 2 18, -2 6"
+        fill="none" stroke="#d9dee4" stroke-width="4.4" stroke-linecap="round"/>
+  <rect x="-24" y="2" width="12" height="9" rx="2" fill="#e6ebf0"/>
+  <rect x="-22" y="4" width="8" height="5" rx="1.5" fill="#aeb6bf"/>
+</g>
+"""
+
+
+def stiftleiste(zufall):
+    """Stueck Stiftleiste."""
+    stifte = "".join(f'<rect x="{-26 + i*7.4:.1f}" y="-9" width="3" height="10" fill="#d9c07a"/>'
+                     for i in range(8))
+    return f"""
+<g class="kram" transform="rotate({zufall.uniform(-25, 25):.0f})" filter="url(#schatten_klein)">
+  {stifte}
+  <rect x="-28" y="0" width="58" height="9" rx="1.5" fill="#1b1f26"/>
+  <rect x="-28" y="0" width="58" height="3" fill="#2f353e"/>
+</g>
+"""
+
+
+def kaffeetasse(r=26):
+    """Tasse von oben, halb voll."""
+    return f"""
+<g class="kram" filter="url(#schatten_weich)">
+  <ellipse cx="{r*1.1:.0f}" cy="0" rx="{r*0.5:.0f}" ry="{r*0.34:.0f}" fill="none"
+           stroke="#e8eaed" stroke-width="6"/>
+  <circle r="{r}" fill="#f2f4f6"/>
+  <circle r="{r}" fill="none" stroke="#c9ced5" stroke-width="1.6"/>
+  <circle r="{r*0.82:.1f}" fill="#4a2c16"/>
+  <circle r="{r*0.82:.1f}" fill="none" stroke="#2c190c" stroke-width="1.4"/>
+  <ellipse cx="{-r*0.22:.0f}" cy="{-r*0.26:.0f}" rx="{r*0.3:.0f}" ry="{r*0.18:.0f}"
+           fill="#8a5a2e" opacity="0.5"/>
+</g>
+"""
+
+
+# Vorrat, aus dem sich jedes Banner bedient. "lang" braucht einen langen
+# Platz, "kurz" einen mittleren, "kram" faellt in jede Luecke.
+def werkzeug_vorrat():
+    return {
+        "pinzette": ("kurz", lambda z: pinzette(104 + z.uniform(-6, 10))),
+        "seitenschneider": ("kurz", lambda z: seitenschneider(116 + z.uniform(-6, 10))),
+        "entloetpumpe": ("kurz", lambda z: entloetpumpe(128 + z.uniform(-8, 12))),
+        "bleistift": ("kurz", lambda z: bleistift(112 + z.uniform(-6, 12))),
+        "krokokabel": ("kurz", lambda z: krokokabel(140 + z.uniform(-10, 14))),
+        "loetzinn": ("kram", lambda z: loetzinn(25 + z.uniform(-3, 4))),
+        "schrauben": ("kram", lambda z: schrauben(z, z.randint(4, 7))),
+        "widerstaende": ("kram", lambda z: widerstaende(z, z.randint(3, 5))),
+        "kabelbinder": ("kram", lambda z: kabelbinder(z)),
+        "stiftleiste": ("kram", lambda z: stiftleiste(z)),
+        "kaffeetasse": ("kram", lambda z: kaffeetasse(26 + z.uniform(-2, 4))),
+    }

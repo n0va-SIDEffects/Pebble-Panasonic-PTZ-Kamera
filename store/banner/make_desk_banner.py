@@ -45,15 +45,15 @@ SCHRIFTEN = {
 
 # Akzentfarbe je Projekt: klar unterscheidbar, damit die Banner in der
 # Store-Liste nebeneinander nicht verschwimmen.
-LOGO_ARTEN = ["sticker", "plakette", "kritzel", "stempel", "druck"]
+LOGO_ARTEN = ["geraet", "sticker", "plakette", "kritzel", "stempel", "druck"]
 
 # Jede App bekommt ihre eigene Erscheinungsform des Logos - das Logo ist
 # immer da, aber nie zweimal gleich. Unbekannte Projekte bekommen eine
 # Form zugelost, die ueber die Laufzeit stabil bleibt.
 LOGO_JE_PROJEKT = {
-    "theremin": "sticker",
-    "ptz": "plakette",
-    "helo": "stempel",
+    "theremin": "geraet",
+    "ptz": "geraet",
+    "helo": "geraet",
 }
 
 AKZENTE = {
@@ -184,7 +184,7 @@ def logo_stempel(uri, x, y, dreh, akzent, breite=124):
 """
 
 
-def logo_plakette(uri, x, y, dreh, breite=116):
+def logo_plakette(uri, x, y, dreh, breite=104):
     """
     Logo als gelaserte Alu-Plakette, wie sie auf Selbstbaugeraeten klebt.
     Liegt lose auf der Matte.
@@ -231,8 +231,129 @@ def logo_gekritzelt(uri, zufall, x, y, dreh, breite=104):
 """
 
 
+def logo_auf_geraet(uri, platz):
+    """
+    Logo direkt auf dem Geraet: in das Holz gelasert, auf den hellen
+    Kamerakorpus gedruckt, in die dunkle Frontplatte geaetzt. Das ist die
+    dezenteste Form - das Logo gehoert dann zum Geraet und nicht zum Bild,
+    man findet es beim zweiten Hinsehen.
+    """
+    breite = platz["breite"]
+    hoehe = breite * 0.41
+    stil = platz.get("stil", "gravur_holz")
+    x, y = platz["x"], platz["y"]
+
+    if stil == "gravur_holz":
+        # Lasergravur: dunkel eingebrannt, mit einer hellen Lichtkante an
+        # der Oberkante - erst die macht die Vertiefung sichtbar.
+        return f"""
+<g transform="translate({x},{y})">
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(0.1)" opacity="0.52"/>
+  <image href="{uri}" x="0.6" y="-1.1" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(2.6)" opacity="0.26"/>
+</g>
+"""
+    if stil == "druck_dunkel":
+        return f"""
+<g transform="translate({x},{y})">
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(0.4) contrast(1.2)" opacity="0.48"/>
+</g>
+"""
+    return f"""
+<g transform="translate({x},{y})">
+  <image href="{uri}" x="0" y="1" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(0)" opacity="0.45"/>
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(2.8)" opacity="0.42"/>
+</g>
+"""
+
+
+PLAETZE = [
+    ("oben", 426, 64, -17, 14, 10, "lang"),
+    ("unten", 300, 294, -5, 22, 8, "lang"),
+    ("links", 86, 208, -78, 12, 12, "kurz"),
+    ("linksoben", 112, 164, -58, 10, 14, "kurz"),
+    ("linksunten", 142, 292, 14, 16, 16, "kurz"),
+    ("rechts", 458, 210, 66, 12, 16, "kurz"),
+    ("kram_oben", 374, 120, 0, 18, 0, "kram"),
+    ("kram_untenrechts", 452, 290, 0, 12, 0, "kram"),
+    ("kram_untenlinks", 54, 292, 0, 10, 0, "kram"),
+    ("kram_links", 58, 248, 0, 12, 0, "kram"),
+]
+
+
+def tisch_decken(zufall, projekt):
+    """
+    Werkzeuge auf die Plaetze verteilen. Teppichmesser, Loetkolben und
+    zwei Feinschraubendreher sind immer dabei - sie tragen die Serie.
+    Dazu kommen ein bis zwei Stuecke aus dem Vorrat und zwei bis drei
+    Kleinteile, damit kein Tisch wie der vorige aussieht.
+
+    Werkzeuge duerfen um 180 Grad gedreht liegen; beim Loetkolben ist das
+    keine Laune, sondern Pflicht: sein Kabel soll zum Bildrand laufen und
+    nicht quer ueber das Geraet.
+    """
+    vorrat = scene.werkzeug_vorrat()
+    frei = {art: [p for p in PLAETZE if p[6] == art] for art in ("lang", "kurz", "kram")}
+    for art in frei:
+        zufall.shuffle(frei[art])
+
+    gelegt = []
+
+    def hinlegen(art, zeichnung, tiefe, flip="zufall"):
+        """flip: 'zufall', 'nie' oder eine Liste von Plaetzen, die kippen."""
+        if not frei[art]:
+            return None
+        name, x, y, dreh, streu, drehstreu, _ = frei[art].pop()
+        x += zufall.uniform(-streu, streu)
+        y += zufall.uniform(-streu, streu)
+        dreh += zufall.uniform(-drehstreu, drehstreu)
+        if flip == "zufall":
+            gekippt = zufall.random() < 0.5
+        elif flip == "nie":
+            gekippt = False
+        else:
+            gekippt = name in flip
+        if gekippt:
+            dreh += 180
+        gelegt.append((tiefe, f'<g transform="translate({x:.0f},{y:.0f}) '
+                              f'rotate({dreh:.1f})">{zeichnung}</g>'))
+        return name
+
+    # fester Bestand
+    hinlegen("lang", scene.teppichmesser(136 + zufall.uniform(-8, 10)), zufall.uniform(0.55, 0.9))
+    hinlegen("lang", scene.loetkolben(178 + zufall.uniform(-10, 12)), zufall.uniform(0.55, 0.9),
+             flip=("oben",))
+    hinlegen("kurz", scene.schraubendreher(120 + zufall.uniform(-8, 10), "griff_rot"),
+             zufall.uniform(0.2, 0.9))
+    hinlegen("kurz", scene.schraubendreher(112 + zufall.uniform(-8, 10), "griff_blau"),
+             zufall.uniform(0.2, 0.9))
+
+    # Gaeste aus dem Vorrat
+    gross = [n for n, (art, _) in vorrat.items() if art in ("lang", "kurz")]
+    zufall.shuffle(gross)
+    offen = zufall.randint(1, 2)
+    for name in gross:
+        if offen <= 0:
+            break
+        art, zeichnen = vorrat[name]
+        if frei[art] and hinlegen(art, zeichnen(zufall), zufall.uniform(0.2, 0.9)):
+            offen -= 1
+
+    # Kleinteile
+    kram = [n for n, (art, _) in vorrat.items() if art == "kram"]
+    zufall.shuffle(kram)
+    for name in kram[:zufall.randint(2, 3)]:
+        hinlegen("kram", vorrat[name][1](zufall), zufall.uniform(0.05, 0.18), flip="nie")
+
+    return gelegt
+
+
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
-           akzent=None, logo_art="sticker", uhr_name="pebble_time_2"):
+           akzent=None, logo_art="auto", uhr_name="pebble_time_2"):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
@@ -244,57 +365,51 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
     uhr_dreh = round(9 + zufall.uniform(-3.5, 3.5), 1)
 
     logo_uri = data_uri(logo_freistellen(logo_pfad))
-
     schriften = {k: font_uri(v) for k, v in SCHRIFTEN.items()}
 
-    # Werkzeuge: feste Plaetze mit kleinem Spielraum, damit die Serie
-    # wiedererkennbar bleibt und trotzdem jedes Banner anders liegt.
-    def platz(x, y, dreh, streu=14, drehstreu=9):
-        return (x + zufall.uniform(-streu, streu),
-                y + zufall.uniform(-streu, streu),
-                dreh + zufall.uniform(-drehstreu, drehstreu))
-
-    mx, my, md = platz(424, 64, -17, 9, 7)          # Teppichmesser
-    lx, ly, ld = platz(300, 288, -5, 16, 5)          # Loetkolben
-    s1x, s1y, s1d = platz(462, 214, 64, 10, 12)      # Schraubendreher schmal
-    s2x, s2y, s2d = platz(96, 186, -84, 8, 8)     # Schraubendreher zweiter
-    zx, zy, zd = platz(438, 290, 0, 8, 0)           # Loetzinn
-    kx, ky, _ = platz(366, 118, 0, 12, 0)            # Schrauben
-
-    projekt_svg = scene.PROJEKTE[projekt](akzent)
-    px, py, pd = platz(272, 196, 0, 8, 3)
-
     if logo_art == "auto":
-        logo_art = LOGO_JE_PROJEKT.get(
-            projekt, LOGO_ARTEN[sum(ord(c) for c in projekt) % len(LOGO_ARTEN)])
+        logo_art = LOGO_JE_PROJEKT.get(projekt, "geraet")
+
+    # Das Logo sitzt entweder auf dem Geraet selbst oder liegt als eigenes
+    # Stueck auf dem Tisch.
+    logo_im_geraet, logo_svg = "", ""
     wackel = zufall.uniform(-3, 3)
-    if logo_art == "sticker":
-        logo_svg = logo_sticker(logo_uri, 30, 250, -8 + wackel, 104)
+    if logo_art == "geraet" and projekt in scene.PROJEKT_LOGOPLATZ:
+        logo_im_geraet = logo_auf_geraet(logo_uri, scene.PROJEKT_LOGOPLATZ[projekt])
+    elif logo_art == "sticker":
+        logo_svg = logo_sticker(logo_uri, 30, 250, -8 + wackel, 96)
     elif logo_art == "druck":
         logo_svg = logo_druck(logo_uri, 28, 250, -2 + wackel)
     elif logo_art == "stempel":
         logo_svg = logo_stempel(logo_uri, 34, 256, -7 + wackel, akzent)
     elif logo_art == "plakette":
-        logo_svg = logo_plakette(logo_uri, 38, 252, -6 + wackel)
-    else:
+        logo_svg = logo_plakette(logo_uri, 38, 252, -6 + wackel, 104)
+    elif logo_art == "kritzel":
         logo_svg = logo_gekritzelt(logo_uri, zufall, 32, 212, -5 + wackel)
+    else:
+        logo_im_geraet = logo_auf_geraet(logo_uri, scene.PROJEKT_LOGOPLATZ[projekt])
+
+    projekt_svg = scene.PROJEKTE[projekt](akzent, logo_im_geraet)
+    px = 272 + zufall.uniform(-10, 10)
+    py = 196 + zufall.uniform(-8, 8)
+    pd = zufall.uniform(-4, 4)
+
+    # Werkzeuge und Geraet nach Tiefe stapeln: manches liegt unter dem
+    # Geraet, manches darueber - das macht den Tisch erst unaufgeraeumt.
+    stapel = tisch_decken(zufall, projekt)
+    stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
+                        f'rotate({pd:.1f})">{projekt_svg}</g>'))
+    if logo_svg:
+        stapel.append((0.22, logo_svg))
+    stapel.sort(key=lambda e: e[0])
+    tisch = "\n".join(svg for _, svg in stapel)
 
     return f"""
 <svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
 {scene.defs(schriften, akzent)}
 {scene.untergrund()}
 {scene.schneidematte(zufall)}
-
-<g transform="translate({zx:.0f},{zy:.0f})">{scene.loetzinn(28)}</g>
-<g transform="translate({kx:.0f},{ky:.0f})">{scene.schrauben(zufall, 6)}</g>
-
-<g transform="translate({lx:.0f},{ly:.0f}) rotate({ld:.1f})">{scene.loetkolben(196)}</g>
-<g transform="translate({s2x:.0f},{s2y:.0f}) rotate({s2d:.1f})">{scene.schraubendreher(124, 'griff_blau')}</g>
-<g transform="translate({px:.0f},{py:.0f}) rotate({pd:.1f})">{projekt_svg}</g>
-<g transform="translate({s1x:.0f},{s1y:.0f}) rotate({s1d:.1f})">{scene.schraubendreher(132, 'griff_rot')}</g>
-<g transform="translate({mx:.0f},{my:.0f}) rotate({md:.1f})">{scene.teppichmesser(148)}</g>
-
-{logo_svg}
+{tisch}
 
 <!-- Pebble: liegt obenauf, Armbaender laufen aus dem Bild -->
 <g transform="translate({uhr_x:.0f},{uhr_y:.0f}) rotate({uhr_dreh})" filter="url(#schatten_gross)">

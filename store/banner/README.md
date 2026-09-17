@@ -8,30 +8,35 @@ dem gerade genau diese App entsteht.
 
 ## Was die Serie zusammenhaelt
 
-Diese Teile liegen in jedem Banner an derselben Stelle - daran erkennt man
-die Serie, bevor man den Titel gelesen hat:
-
 | Element | Platz |
 |---|---|
 | Holzplatte mit Schneidematte | ganze Flaeche, Matte leicht schraeg |
 | Titel, Unterzeile, Plattformzeile | oben links, auf dem freien Holz |
 | Pebble mit dem Screenshot im Display | rechts, gekippt, Armbaender laufen aus dem Bild |
-| Teppichmesser | oben, zwischen Titel und Uhr |
-| Zwei Feinschraubendreher | links senkrecht und rechts neben dem Geraet |
-| Loetkolben mit Kabel | unten, Kabel laeuft nach links aus dem Bild |
-| Loetzinn, Schrauben | Streu-Kram, fuellt die Luecken |
-| SIDE effect's Logo | unten links, in wechselnder Form |
+| Teppichmesser, Loetkolben | die beiden langen Plaetze oben und unten |
+| Zwei Feinschraubendreher | zwei der mittleren Plaetze |
+| Das Geraet der App | Bildmitte |
+| SIDE effect's Logo | auf dem Geraet selbst |
 
 ## Was sich je App aendert
 
-- **Das Projekt in der Bildmitte** - das Geraet, um das es geht.
+- **Das Geraet in der Bildmitte** - darum geht es.
 - **Die Akzentfarbe** - Unterzeile, Leuchtpunkte, Strich unter dem Titel.
-- **Die Form des Logos** - Aufkleber, Alu-Plakette, Notizzettel,
-  Tintenstempel oder Siebdruck auf der Matte. Immer da, nie zweimal
-  gleich.
-- **Die Lage der Werkzeuge** - `--seed` verschiebt und verdreht sie in
-  engen Grenzen. Gleicher Seed heisst gleiches Bild, das Banner ist also
-  jederzeit reproduzierbar.
+- **Die Form des Logos.** Voreingestellt traegt das Geraet es selbst:
+  beim Theremin ins Holz gelasert, bei der PTZ-Kamera auf den Sockel
+  gedruckt, beim HELO in die Frontplatte geaetzt. Es soll beim zweiten
+  Hinsehen gefunden werden, nicht beim ersten. Wo das nicht passt, gibt
+  es das Logo weiterhin als Aufkleber, Alu-Plakette, Notizzettel,
+  Tintenstempel oder Siebdruck auf der Matte (`--logo-art`).
+- **Der Tisch selbst.** `--seed` verteilt die Werkzeuge neu: welcher
+  Platz belegt wird, in welcher Richtung ein Werkzeug liegt, was aus dem
+  Vorrat dazukommt (Pinzette, Seitenschneider, Entloetpumpe, Bleistift,
+  Messkabel) und welche Kleinteile herumliegen (Loetzinn, Schrauben,
+  Widerstaende, Kabelbinder, Stiftleiste, Kaffeetasse). Gleicher Seed
+  heisst gleiches Bild - das Banner bleibt reproduzierbar.
+
+Ein paar Seeds durchprobieren lohnt sich; die Anordnungen unterscheiden
+sich deutlich.
 
 ## Bauen
 
@@ -45,14 +50,12 @@ python3 make_desk_banner.py \
     --out banner_720x320.png
 ```
 
-Wichtige Schalter:
-
 | Schalter | Wirkung |
 |---|---|
 | `--projekt` | `theremin`, `ptz`, `helo` - das Geraet in der Mitte |
 | `--shot` | Screenshot fuer das Display, in nativer Aufloesung |
 | `--seed` | Anordnung der Werkzeuge; einfach durchprobieren |
-| `--logo-art` | `auto` (Voreinstellung) oder `sticker`, `plakette`, `kritzel`, `stempel`, `druck` |
+| `--logo-art` | `auto` (Voreinstellung, Logo am Geraet) oder `geraet`, `sticker`, `plakette`, `kritzel`, `stempel`, `druck` |
 | `--akzent` | Akzentfarbe ueberschreiben, z. B. `"#ff8a1e"` |
 | `--uhr` | `pebble_time_2` (Voreinstellung) oder `pebble_time_steel` |
 | `--plattform` | die kleine Zeile unter dem Titel |
@@ -65,13 +68,18 @@ cp banner_720x320.png ../release/banner_720x320.png
 
 ## Ein neues Projekt aufnehmen
 
-1. In `scene.py` eine Funktion `projekt_<name>(akzent)` schreiben, die das
-   Geraet um den Nullpunkt herum zeichnet (etwa 260 x 180 Bannereinheiten,
-   Akzentfarbe fuer Leuchtpunkte und Anzeigen).
-2. Den Namen in `PROJEKTE` am Ende von `scene.py` eintragen.
-3. In `make_desk_banner.py` eine Akzentfarbe in `AKZENTE` und eine
-   Logo-Form in `LOGO_JE_PROJEKT` hinterlegen - eine, die noch keine
-   andere App hat.
+1. In `scene.py` eine Funktion `projekt_<name>(akzent, logo="")` schreiben,
+   die das Geraet um den Nullpunkt herum zeichnet (etwa 260 x 180
+   Bannereinheiten). `{logo}` an der Stelle einsetzen, an der das
+   Typenschild sitzen soll.
+2. Den Namen in `PROJEKTE` eintragen und in `PROJEKT_LOGOPLATZ` festlegen,
+   wo und wie das Logo auf dem Geraet sitzt (`gravur_holz`,
+   `druck_dunkel` fuer helle Gehaeuse, `aetzung_hell` fuer dunkle).
+3. In `make_desk_banner.py` eine Akzentfarbe in `AKZENTE` hinterlegen.
+
+Ein neues Werkzeug kommt genauso dazu: zeichnen, entlang +x um die eigene
+Mitte, und in `werkzeug_vorrat()` als `lang`, `kurz` oder `kram`
+eintragen.
 
 ## Voraussetzungen
 
@@ -82,7 +90,7 @@ cp banner_720x320.png ../release/banner_720x320.png
 ## Dateien
 
 ```
-make_desk_banner.py   Zusammenbau, Titel, Logo-Formen, Kommandozeile
+make_desk_banner.py   Zusammenbau, Plaetze, Titel, Logo-Formen, Kommandozeile
 scene.py              Tisch, Matte, Werkzeuge, Kleinkram, Projektgeraete
 render.py             SVG -> PNG ueber den Browser, 2-fach ueberabgetastet
 assets/               freigestellte Uhraufnahmen, uhren.json, Logo
