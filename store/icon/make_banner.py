@@ -1,31 +1,38 @@
 #!/usr/bin/env python3
 """
-Baut das Store-Banner (720 x 320).
+Baut ein Store-Banner (720 x 320) mit gezeichneter Uhr.
 
-    python3 store/icon/make_banner.py
+    python3 make_banner.py --shot store/screenshots_en/1_status.png \
+        --icon store/icon/icon_512_transparent.png \
+        --logo store/icon/side_effects_logo.png \
+        --title "Toggl Timer" --subtitle "for Pebble Time 2" \
+        --line "Start, stop and switch your" \
+        --line "Toggl Track timers from the wrist." \
+        --line "Favourites - Dictation - Reminders" \
+        --accent "#e57cd8" --out store/icon/banner_720x320.png
 
-Zwei Vorgaben des Nutzers, die fuer jedes kuenftige Banner gelten:
-
-1. Der Screenshot wird **in einer Uhr** gezeigt, nicht als nacktes
-   Rechteck. Grundlage ist die freigestellte Aufnahme des Nutzers in
-   `pebble_watch.png`; der Screenshot wird in ihre Displayflaeche gesetzt.
-2. Das SIDE effect's Logo ist **immer** dabei, unten links, 185 Pixel
-   breit, in voller Deckkraft. Fehlt die Datei, bricht das Skript ab -
-   ein Banner ohne Logo soll gar nicht erst entstehen.
-
-Layout: dunkler Grund, ein grosser Schwenkbogen als Hintergrundmotiv,
-links Icon, Titel und Slogan, rechts die Uhr mit dem Screenshot.
+--tilt 0 stellt die Uhr gerade, --round zeichnet ein rundes Gehaeuse
+(chalk, gabbro), --screen-w und --watch-x verschieben sie. Masse und Farben
+des Gehaeuses stehen in references/assets.md; dieses Skript ist ihre
+Umsetzung. Fehlt das Logo, bricht es ab - ein Banner ohne Logo soll nicht
+entstehen.
 """
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-import os, sys, math
+import argparse
+import os
 
 W, H = 720, 320
 DARK = (22, 30, 42)
-ACCENT = (240, 122, 40)
 LIGHT = (238, 242, 247)
 MUTED = (150, 162, 180)
-HIER = os.path.dirname(os.path.abspath(__file__))
-WURZEL = os.path.dirname(os.path.dirname(HIER)) if False else os.path.dirname(HIER)
+F = 3                      # Ueberabtastung
+
+# Gehaeusefarben (references/assets.md)
+KANTE = (120, 128, 142)
+KORPUS = (26, 29, 36)
+SCHEIBE = (8, 9, 12)
+TASTE = (96, 102, 115)
+BAND = (52, 58, 72)
 
 F_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 F_REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -38,166 +45,206 @@ def schrift(pfad, groesse):
         return ImageFont.load_default()
 
 
-def bogen(img):
-    """
-    Schwenkbogen als Hintergrundmotiv, dreifach ueberabgetastet.
+def breite(text, pfad, groesse):
+    return schrift(pfad, groesse).getbbox(text)[2]
 
-    Orange mit Deckkraft unter hundert Prozent mischt sich auf dem dunklen
-    Grund zu Braun - es sieht schmutzig aus, egal welcher Wert. Deshalb der
-    breite Bogen in hellem Grau mit wenig Deckkraft und darunter eine
-    duenne, voll deckende Linie in der Akzentfarbe.
+
+def hex_zu_rgb(wert):
+    wert = wert.lstrip("#")
+    return tuple(int(wert[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def uhr_zeichnen(shot, schirm_b=150, rund=False):
     """
-    f = 3
-    lein = Image.new("RGBA", (W * f, H * f), (0, 0, 0, 0))
+    Gehaeuse um den Screenshot zeichnen, dreifach ueberabgetastet.
+
+    Rand oben und unten ist absichtlich ungleich: ein Gehaeuse mit ueberall
+    gleichem Rand sieht falsch aus.
+    """
+    if rund:
+        seite = min(shot.size)
+        shot = shot.crop(((shot.width - seite) // 2, (shot.height - seite) // 2,
+                          (shot.width + seite) // 2, (shot.height + seite) // 2))
+        schirm_h = schirm_b
+    else:
+        schirm_h = round(schirm_b * shot.height / shot.width)
+
+    rand_x, rand_o, rand_u = 15, 25, 29
+    geh_b = schirm_b + 2 * rand_x
+    geh_h = schirm_h + rand_o + rand_u
+    band_b = int(geh_b * 0.56)
+    # Baender nur so lang, dass sie bis ueber den Bildrand reichen. Laenger
+    # bringt nichts und laesst die gedrehte Uhr stark in die Breite wachsen:
+    # aus 9 Grad Neigung wird sonst ein Bild, das rechts hinausragt.
+    band_l = (H - geh_h) // 2 + 24
+
+    lein = Image.new("RGBA", (geh_b * F, (geh_h + 2 * band_l) * F), (0, 0, 0, 0))
     d = ImageDraw.Draw(lein)
-    cx, cy = int(W * 0.72 * f), int(H * 1.30 * f)
+    oben = band_l * F
+    unten = (band_l + geh_h) * F
 
-    r = int(H * 1.02 * f)
-    d.arc([cx - r, cy - r, cx + r, cy + r], 232, 308,
-          fill=LIGHT + (26,), width=int(18 * f))
+    # Armbaender, nach aussen verjuengt
+    schmaler = int(band_b * 0.09)
+    for y0, y1, spitze_oben in ((0, oben + 8 * F, True),
+                                (unten - 8 * F, lein.height, False)):
+        x0 = (geh_b - band_b) // 2
+        aussen = x0 + schmaler
+        if spitze_oben:
+            ecken = [(aussen * F, y0), ((x0 + band_b - schmaler) * F, y0),
+                     ((x0 + band_b) * F, y1), (x0 * F, y1)]
+        else:
+            ecken = [(x0 * F, y0), ((x0 + band_b) * F, y0),
+                     ((x0 + band_b - schmaler) * F, y1), (aussen * F, y1)]
+        d.polygon(ecken, fill=BAND + (255,))
 
-    r2 = int(H * 0.80 * f)
-    d.arc([cx - r2, cy - r2, cx + r2, cy + r2], 228, 312,
-          fill=ACCENT + (255,), width=int(3 * f))
+    # Gehaeuse
+    if rund:
+        d.ellipse([0, oben, geh_b * F, unten], fill=KANTE + (255,))
+        d.ellipse([2 * F, oben + 2 * F, (geh_b - 2) * F, unten - 2 * F], fill=KORPUS + (255,))
+    else:
+        d.rounded_rectangle([0, oben, geh_b * F, unten], 26 * F, fill=KANTE + (255,))
+        d.rounded_rectangle([2 * F, oben + 2 * F, (geh_b - 2) * F, unten - 2 * F],
+                            24 * F, fill=KORPUS + (255,))
 
-    img.alpha_composite(lein.resize((W, H), Image.LANCZOS))
+    # Vertiefte Displayflaeche mit 4 px Ueberstand
+    sx, sy = rand_x, band_l + rand_o
+    if rund:
+        d.ellipse([(sx - 4) * F, (sy - 4) * F, (sx + schirm_b + 4) * F, (sy + schirm_h + 4) * F],
+                  fill=SCHEIBE + (255,))
+    else:
+        d.rounded_rectangle([(sx - 4) * F, (sy - 4) * F,
+                             (sx + schirm_b + 4) * F, (sy + schirm_h + 4) * F],
+                            8 * F, fill=SCHEIBE + (255,))
 
+    # Tasten 22 x 8: eine links auf halber Hoehe, drei rechts bei -58, 0, +58.
+    # Ohne sie wirkt das Gehaeuse wie ein Telefon.
+    mitte = oben + (unten - oben) // 2
+    d.rounded_rectangle([-4 * F, mitte - 11 * F, 4 * F, mitte + 11 * F],
+                        3 * F, fill=TASTE + (255,))
+    for dy in (-58, 0, 58):
+        d.rounded_rectangle([(geh_b - 4) * F, mitte + (dy - 11) * F,
+                             (geh_b + 4) * F, mitte + (dy + 11) * F],
+                            3 * F, fill=TASTE + (255,))
 
-# Displayflaeche in pebble_watch.png, ausgemessen an der freigestellten
-# Aufnahme: links, oben, rechts, unten. Gilt fuer die Pebble Time 2.
-DISPLAY = (97, 302, 436, 704)
-ECKRADIUS = 26
+    uhr = lein.resize((geh_b, geh_h + 2 * band_l), Image.LANCZOS)
 
-
-def uhr_mit_screenshot(shot, hoehe, neigung=0):
-    """
-    Setzt den Screenshot in die Displayflaeche der fotografierten Uhr.
-
-    Der Screenshot wird auf die Displaybreite gebracht und mittig gesetzt;
-    sein Seitenverhaeltnis bleibt erhalten, der schmale Rest oben und unten
-    bleibt schwarz und faellt auf dem ohnehin schwarzen Display nicht auf.
-    Die abgerundeten Ecken des Displays werden nachgebildet, sonst legt sich
-    ein hartes Rechteck ueber die Rundung.
-    """
-    uhr = Image.open(os.path.join(HIER, "pebble_watch.png")).convert("RGBA")
-
-    x0, y0, x1, y1 = DISPLAY
-    dw, dh = x1 - x0 + 1, y1 - y0 + 1
-
-    innen = Image.new("RGBA", (dw, dh), (0, 0, 0, 255))
-    sh = shot.resize((dw, max(1, round(dw * shot.height / shot.width))), Image.LANCZOS)
-    if sh.height > dh:
-        schnitt = (sh.height - dh) // 2
-        sh = sh.crop((0, schnitt, sh.width, schnitt + dh))
-    innen.alpha_composite(sh.convert("RGBA"), (0, (dh - sh.height) // 2))
-
-    maske = Image.new("L", (dw, dh), 0)
-    ImageDraw.Draw(maske).rounded_rectangle([0, 0, dw - 1, dh - 1], ECKRADIUS, fill=255)
-    uhr.paste(innen, (x0, y0), maske)
-
-    breite = max(1, round(uhr.width * hoehe / uhr.height))
-    uhr = uhr.resize((breite, hoehe), Image.LANCZOS)
-
-    if neigung:
-        # Erst den Screenshot einsetzen, dann das Ganze drehen - so muss die
-        # Displayflaeche nicht perspektivisch verzerrt werden, und Gehaeuse,
-        # Band und Bild kippen gemeinsam. expand haelt die Ecken im Bild.
-        uhr = uhr.rotate(neigung, resample=Image.BICUBIC, expand=True)
+    # Screenshot einsetzen, mit abgerundeten beziehungsweise runden Ecken
+    bild = shot.convert("RGBA").resize((schirm_b, schirm_h), Image.LANCZOS)
+    maske = Image.new("L", (schirm_b, schirm_h), 0)
+    md = ImageDraw.Draw(maske)
+    if rund:
+        md.ellipse([0, 0, schirm_b - 1, schirm_h - 1], fill=255)
+    else:
+        md.rounded_rectangle([0, 0, schirm_b - 1, schirm_h - 1], 6, fill=255)
+    uhr.paste(bild, (sx, sy), maske)
     return uhr
 
 
-def main(logo_pfad=None):
+def main():
+    p = argparse.ArgumentParser(description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--shot", required=True)
+    p.add_argument("--icon")
+    p.add_argument("--logo", required=True)
+    p.add_argument("--title", required=True)
+    p.add_argument("--subtitle", default="")
+    p.add_argument("--line", action="append", default=[])
+    p.add_argument("--accent", default="#f07a28")
+    p.add_argument("--tilt", type=float, default=9)
+    p.add_argument("--round", action="store_true")
+    p.add_argument("--screen-w", type=int, default=150)
+    p.add_argument("--watch-x", type=int, default=590)
+    p.add_argument("--out", default="banner_720x320.png")
+    a = p.parse_args()
+
+    if not os.path.exists(a.logo):
+        raise SystemExit("Logo fehlt: " + a.logo + "\nEs gehoert auf jedes Banner.")
+    accent = hex_zu_rgb(a.accent)
+
     img = Image.new("RGBA", (W, H), DARK + (255,))
-    bogen(img)
     d = ImageDraw.Draw(img)
 
-    # Die Time 2 ist schwarz und der Grund ist dunkel - ohne Hilfe
-    # verschwindet das Gehaeuse darin. Ein weicher heller Schein dahinter
-    # loest sie vom Hintergrund, ohne den dunklen Gesamteindruck zu stoeren.
-    def schein(mitte, radius):
-        fleck = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(fleck).ellipse(
-            [mitte[0] - radius, mitte[1] - int(radius * 1.25),
-             mitte[0] + radius, mitte[1] + int(radius * 1.25)],
-            fill=(150, 168, 195, 46))
-        img.alpha_composite(fleck.filter(ImageFilter.GaussianBlur(58)))
+    # Dezente Grafik im Hintergrund: helle Kurve mit wenig Deckkraft, davor
+    # eine duenne volle Linie in der Akzentfarbe. Eine teildeckende
+    # Akzentfarbe wuerde auf dunklem Grund zu Schlamm verlaufen.
+    lein = Image.new("RGBA", (W * F, H * F), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(lein)
+    cx, cy = int(W * 0.72 * F), int(H * 1.30 * F)
+    r = int(H * 1.02 * F)
+    ld.arc([cx - r, cy - r, cx + r, cy + r], 232, 308, fill=LIGHT + (26,), width=18 * F)
+    r2 = int(H * 0.80 * F)
+    ld.arc([cx - r2, cy - r2, cx + r2, cy + r2], 228, 312, fill=accent + (255,), width=3 * F)
+    img.alpha_composite(lein.resize((W, H), Image.LANCZOS))
 
-    # Masse nach references/assets.md, "Banner-Layout, das funktioniert
-    # hat": Icon 120, Titel 52 pt, Untertitel 20 pt, zwei Zeilen Slogan
-    # 15 pt, Logo 185 px unten links.
-    #
-    # Eine Abweichung: der Titel steht auf 46 pt. Die 52 pt der Vorlage
-    # gelten fuer einen kurzen Namen; "PTZ Remote" misst dort 355 Pixel und
-    # liefe neben dem 120er Icon in die Uhr hinein; 45 pt lassen
-    # ausserdem eine Handbreit Luft zu ihr. Alles Geschriebene
-    # bleibt links von ihr - Text unter einem Bild ist der haeufigste Fehler
-    # bei solchen Bannern.
-    icon = Image.open(os.path.join(HIER, "icon_144_alpha.png")).convert("RGBA")
-    icon = icon.resize((120, 120), Image.LANCZOS)
-    img.alpha_composite(icon, (32, 26))
+    uhr = uhr_zeichnen(Image.open(a.shot), a.screen_w, a.round)
 
-    d.text((164, 46), "PTZ Remote", font=schrift(F_BOLD, 45), fill=LIGHT)
-    d.text((166, 106), "Panasonic PTZ from your wrist",
-           font=schrift(F_REG, 20), fill=ACCENT)
+    # Schatten in derselben Form
+    schatten = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sil = Image.new("RGBA", uhr.size, (0, 0, 0, 0))
+    sil.paste((0, 0, 0, 150), (0, 0), uhr.split()[-1])
+    if a.tilt:
+        sil = sil.rotate(a.tilt, resample=Image.BICUBIC, expand=True)
+    schatten.alpha_composite(sil, (a.watch_x - sil.width // 2 + 4,
+                                   (H - sil.height) // 2 + 8))
+    img.alpha_composite(schatten.filter(ImageFilter.GaussianBlur(9)))
 
-    for i, zeile in enumerate([
-            "Buttons or wrist tilt, with a dead-man switch.",
-            "Presets, 8 cameras, still preview."]):
-        d.text((42, 162 + i * 24), zeile, font=schrift(F_REG, 15), fill=MUTED)
+    if a.tilt:
+        # Gerade wirkt wie im Schaufenster, gekippt wie getragen.
+        uhr = uhr.rotate(a.tilt, resample=Image.BICUBIC, expand=True)
+    ux, uy = a.watch_x - uhr.width // 2, (H - uhr.height) // 2
+    if uy < 0:
+        uhr = uhr.crop((0, -uy, uhr.width, -uy + H))
+        uy = 0
+    img.alpha_composite(uhr, (ux, uy))
 
-    # Der Screenshot sitzt in der Uhr, nicht in einem nackten Rahmen.
-    shot_pfad = os.path.join(WURZEL, "release", "screenshots_emery", "1_motion.png")
-    if not os.path.exists(shot_pfad):
-        raise SystemExit("Screenshot fehlt: " + shot_pfad)
+    # Text: Icon 110 oben links, Titel 42 pt bei x = 166
+    if a.icon and os.path.exists(a.icon):
+        ic = Image.open(a.icon).convert("RGBA").resize((110, 110), Image.LANCZOS)
+        img.alpha_composite(ic, (36, 30))
+    text_x = 166 if a.icon else 42
 
-    # Hoeher als das Banner, damit die Armbaender oben und unten sauber aus
-    # dem Bild laufen - ein Band, das mittendrin aufhoert, sieht abgeschnitten
-    # aus statt angeschnitten.
-    # Leicht gekippt: das wirkt lebendiger als eine gerade stehende Uhr.
-    # Mehr als etwa zehn Grad frisst Breite - die gedrehte Bildflaeche
-    # waechst - und ruecht der Uhr an den Text.
-    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=340, neigung=-7)
-    schein((W - uhr.width // 2 - 40, H // 2), int(uhr.width * 0.62))
-    versatz = (H - uhr.height) // 2
-    if versatz < 0:
-        uhr = uhr.crop((0, -versatz, uhr.width, -versatz + H))
-        versatz = 0
-    img.alpha_composite(uhr, (W - uhr.width - 40, versatz))
+    grenze = 430
+    groesse = 42
+    while groesse > 22 and text_x + breite(a.title, F_BOLD, groesse) > grenze:
+        groesse -= 1
+    if groesse < 42:
+        print(f"Titel auf {groesse} pt verkleinert, sonst liefe er in die Uhr.")
+    d.text((text_x, 44), a.title, font=schrift(F_BOLD, groesse), fill=LIGHT)
+    if a.subtitle:
+        d.text((text_x + 2, 100), a.subtitle, font=schrift(F_REG, 20), fill=accent)
 
-    # Das Logo gehoert auf jedes Banner, immer an dieselbe Stelle.
-    if logo_pfad is None:
-        logo_pfad = os.path.join(HIER, "side_effects_logo.png")
-    if not os.path.exists(logo_pfad):
-        raise SystemExit(
-            "Logo fehlt: " + logo_pfad + "\n"
-            "Es gehoert auf jedes Banner. Datei ablegen oder Pfad uebergeben.")
-    logo = aufbereiten(Image.open(logo_pfad).convert("RGBA"))
-    img.alpha_composite(logo, (30, H - logo.height - 8))
+    # Letzte Sloganzeile in der Akzentfarbe.
+    zeilen = a.line[:3]
+    for i, zeile in enumerate(zeilen):
+        farbe = accent if i == len(zeilen) - 1 and len(zeilen) > 1 else MUTED
+        if 42 + breite(zeile, F_REG, 15) > grenze + 20:
+            print("WARNUNG: Sloganzeile ist breiter als der Textbereich: " + zeile)
+        d.text((42, 158 + i * 24), zeile, font=schrift(F_REG, 15), fill=farbe)
 
-    ziel = os.path.join(HIER, "banner_720x320.png")
-    img.convert("RGB").save(ziel)
-    print("geschrieben:", ziel)
-
-
-def aufbereiten(logo, breite=185):
-    """Weissen Grund entfernen, zuschneiden, rechten Teil aufhellen."""
+    # Logo unten links, 185 px breit, volle Deckkraft
+    logo = Image.open(a.logo).convert("RGBA")
     px = logo.load()
     for y in range(logo.height):
         for x in range(logo.width):
-            r, g, b, a = px[x, y]
-            if r > 235 and g > 235 and b > 235:
-                px[x, y] = (r, g, b, 0)
+            r_, g_, b_, al = px[x, y]
+            if r_ > 235 and g_ > 235 and b_ > 235:
+                px[x, y] = (r_, g_, b_, 0)
     logo = logo.crop(logo.getbbox())
-    grenze = int(logo.width * 0.42)
+    schwelle = int(logo.width * 0.42)
     px = logo.load()
     for y in range(logo.height):
-        for x in range(grenze, logo.width):
-            r, g, b, a = px[x, y]
-            if a > 0 and r < 90 and g < 90 and b < 90:
-                px[x, y] = (225, 232, 240, a)
-    hoehe = int(logo.height * breite / logo.width)
-    return logo.resize((breite, hoehe), Image.LANCZOS)
+        for x in range(schwelle, logo.width):
+            r_, g_, b_, al = px[x, y]
+            if al > 0 and r_ < 90 and g_ < 90 and b_ < 90:
+                px[x, y] = (225, 232, 240, al)
+    logo = logo.resize((185, int(logo.height * 185 / logo.width)), Image.LANCZOS)
+    if 158 + len(zeilen) * 24 > H - logo.height - 8:
+        print("WARNUNG: Sloganzeilen reichen bis ins Logo.")
+    img.alpha_composite(logo, (30, H - logo.height - 8))
+
+    img.convert("RGB").save(a.out)
+    print("geschrieben:", a.out)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else None)
+    main()
