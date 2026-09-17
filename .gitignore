@@ -4,3 +4,4 @@ node_modules/
 *.pbw
 test/ergebnis.raw
 store/release/*.zip
+store/banner/__pycache__/
