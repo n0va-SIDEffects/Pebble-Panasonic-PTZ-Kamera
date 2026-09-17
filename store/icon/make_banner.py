@@ -69,7 +69,7 @@ DISPLAY = (97, 302, 436, 704)
 ECKRADIUS = 26
 
 
-def uhr_mit_screenshot(shot, hoehe):
+def uhr_mit_screenshot(shot, hoehe, neigung=0):
     """
     Setzt den Screenshot in die Displayflaeche der fotografierten Uhr.
 
@@ -96,7 +96,14 @@ def uhr_mit_screenshot(shot, hoehe):
     uhr.paste(innen, (x0, y0), maske)
 
     breite = max(1, round(uhr.width * hoehe / uhr.height))
-    return uhr.resize((breite, hoehe), Image.LANCZOS)
+    uhr = uhr.resize((breite, hoehe), Image.LANCZOS)
+
+    if neigung:
+        # Erst den Screenshot einsetzen, dann das Ganze drehen - so muss die
+        # Displayflaeche nicht perspektivisch verzerrt werden, und Gehaeuse,
+        # Band und Bild kippen gemeinsam. expand haelt die Ecken im Bild.
+        uhr = uhr.rotate(neigung, resample=Image.BICUBIC, expand=True)
+    return uhr
 
 
 def main(logo_pfad=None):
@@ -146,7 +153,10 @@ def main(logo_pfad=None):
     # Hoeher als das Banner, damit die Armbaender oben und unten sauber aus
     # dem Bild laufen - ein Band, das mittendrin aufhoert, sieht abgeschnitten
     # aus statt angeschnitten.
-    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=340)
+    # Leicht gekippt: das wirkt lebendiger als eine gerade stehende Uhr.
+    # Mehr als etwa zehn Grad frisst Breite - die gedrehte Bildflaeche
+    # waechst - und ruecht der Uhr an den Text.
+    uhr = uhr_mit_screenshot(Image.open(shot_pfad), hoehe=340, neigung=-7)
     schein((W - uhr.width // 2 - 40, H // 2), int(uhr.width * 0.62))
     versatz = (H - uhr.height) // 2
     if versatz < 0:
