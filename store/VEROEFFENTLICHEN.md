@@ -10,7 +10,7 @@ Hand passieren — sie verlangt eine Anmeldung im Browser.
 | `PTZ-Remote-0.9.pbw` | die App. Beim Upload liest das Portal Version und Plattformen daraus |
 | `icon_80.png` | Store-Icon, **RGB ohne Alphakanal** (Portal lehnt Alpha ab) |
 | `icon_144.png`, `icon_48.png` | falls das Portal zusätzlich nach großem/kleinem Icon fragt |
-| `banner_720x320.png` | Kopfbild der Listung |
+| `banner_720x320.png` | Kopfbild der Listung — zeigt den Screenshot in einer Pebble Time 2, mit Logo unten links |
 | `description_en.txt` | Zeile 1 = Kurzbeschreibung, Rest = Beschreibung (1553 von 1600 Zeichen) |
 | `screenshots_emery/` | 5 Bilder, 200 × 228 — für Pebble Time 2 |
 | `screenshots_basalt/` | 3 Bilder, 144 × 168 — für Pebble Time |
@@ -49,6 +49,20 @@ Listung — dann gibt es zwei Wege:
 
 Ein Link auf ein privates Repository führt Nutzer ins Leere — das ist die
 schlechteste der drei Möglichkeiten.
+
+## Banner neu bauen
+
+```bash
+python3 store/icon/make_banner.py     # nimmt store/release/screenshots_emery/1_motion.png
+```
+
+Zwei Vorgaben stecken fest im Skript und gelten für jedes künftige Banner:
+
+- Der Screenshot wird **in einer Pebble Time 2** gezeigt, nicht als nacktes
+  Rechteck. Die Bandansätze laufen absichtlich oben und unten aus dem Bild.
+- Das **Logo ist immer dabei**, unten links, 185 px breit, volle Deckkraft.
+  Fehlt `store/icon/side_effects_logo.png`, bricht das Skript ab — ein
+  Banner ohne Logo soll gar nicht erst entstehen.
 
 ## Updates später
 
