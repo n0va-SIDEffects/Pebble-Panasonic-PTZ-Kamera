@@ -201,6 +201,7 @@ def main():
     assets = {k: v for k, v in daten["assets"].items()}
 
     gewuenscht = [n.strip() for n in a.nur.split(",") if n.strip()] or list(assets)
+    ohne_freistellung = []
     os.makedirs(KI, exist_ok=True)
 
     for name in gewuenscht:
@@ -230,12 +231,25 @@ def main():
         roh = os.path.join(KI, f"roh_{name}.png")
         erzeugen(a.server, vorbereiten(vorlage, prompt, breite, hoehe, seed, "banner/" + name), roh)
         print("  erzeugt:", roh)
-        if eintrag.get("freigestellt", True):
+        if not eintrag.get("freigestellt", True):
+            os.replace(roh, ziel)
+            continue
+        try:
             freistellen(roh, ziel, eintrag.get("hintergrund", a.hintergrund))
             print("  freigestellt:", ziel)
-        else:
-            os.replace(roh, ziel)
+        except ImportError:
+            # Ohne numpy/Pillow laeuft der Durchgang trotzdem zu Ende; die
+            # Rohbilder liegen dann in ki/ und lassen sich spaeter oder
+            # anderswo freistellen. Sonst bricht ein fehlendes Modul einen
+            # halbfertigen Satz ab, und das waere der aergerlichste Abbruch.
+            ohne_freistellung.append(name)
+            print("  roh belassen (numpy/Pillow fehlen):", roh)
 
+    if ohne_freistellung:
+        print("\nNicht freigestellt, weil numpy oder Pillow fehlen: " +
+              ", ".join(ohne_freistellung) +
+              "\nNachholen mit:  python -m pip install numpy pillow\n"
+              "und dann noch einmal denselben Aufruf mit --neu.")
     print("\nFertig. Danach in ki/manifest.json eintragen, was benutzt werden soll.")
 
 
