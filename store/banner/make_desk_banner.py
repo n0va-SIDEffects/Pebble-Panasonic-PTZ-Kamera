@@ -540,7 +540,7 @@ def tisch_decken(zufall, projekt, ki=None):
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
            akzent=None, logo_art="auto", uhr_name="pebble_time_2",
            logo_farbe="auto", ki_nutzen=True, uhr_farben="auto",
-           nur_szene=False, szene_datei=None):
+           nur_szene=False, szene_datei=None, ohne_geraet=False):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
@@ -623,20 +623,28 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
         if os.path.exists(lage_datei):
             with open(lage_datei, encoding="utf-8") as f:
                 lage = json.load(f)
-            if lage.get("logo"):
+            ki_jetzt = ki_manifest()
+            innen = ""
+            if lage.get("ohne_geraet") and lage["projekt"] in ki_jetzt:
+                innen = ki_bild(ki_jetzt[lage["projekt"]], logo_uri=logo_uri)
+            elif lage.get("logo"):
+                innen = logo_auf_geraet(logo_uri, lage["logo"])
+            if innen:
                 nachtraegliches_logo = (
                     f'<g transform="translate({lage["px"]},{lage["py"]}) '
-                    f'rotate({lage["pd"]})">' +
-                    logo_auf_geraet(logo_uri, lage["logo"]) + '</g>')
+                    f'rotate({lage["pd"]})">{innen}</g>')
 
     stapel = tisch_decken(zufall, projekt, ki)
-    stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
-                        f'rotate({pd:.1f})">{projekt_svg}</g>'))
+    if not ohne_geraet:
+        stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
+                            f'rotate({pd:.1f})">{projekt_svg}</g>'))
     if logo_svg:
         stapel.append((0.22, logo_svg))
-    if nur_szene and logo_lage:
+    if nur_szene:
         _LAGE.update({"px": round(px), "py": round(py), "pd": round(pd, 1),
-                      "logo": logo_lage, "projekt": projekt})
+                      "projekt": projekt, "ohne_geraet": bool(ohne_geraet)})
+        if logo_lage:
+            _LAGE["logo"] = logo_lage
     stapel.sort(key=lambda e: e[0])
     tisch = "\n".join(svg for _, svg in stapel)
 
@@ -681,6 +689,9 @@ def main():
     p.add_argument("--nur-szene", action="store_true",
                    help="ohne Uhr und Titel - Vorlage fuer den Durchlauf "
                         "durch das Bildmodell")
+    p.add_argument("--ohne-geraet", action="store_true",
+                   help="mit --nur-szene: das Geraet weglassen, damit es beim "
+                        "Durchlauf durchs Modell nicht umgedeutet wird")
     p.add_argument("--szene", default=None,
                    help="fertige (veredelte) Szene als Untergrund benutzen")
     p.add_argument("--gezeichnet", action="store_true",
@@ -706,7 +717,8 @@ def main():
     svg = banner(a.projekt, a.shot, a.titel, a.unterzeile, a.plattform, a.logo,
                  a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe,
                  ki_nutzen=not a.gezeichnet, uhr_farben=farben,
-                 nur_szene=a.nur_szene, szene_datei=a.szene)
+                 nur_szene=a.nur_szene, szene_datei=a.szene,
+                 ohne_geraet=a.ohne_geraet)
     rendern(svg, a.out)
     if a.nur_szene and _LAGE:
         with open(os.path.splitext(a.out)[0] + ".json", "w", encoding="utf-8") as f:
