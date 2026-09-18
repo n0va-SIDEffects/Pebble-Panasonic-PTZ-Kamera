@@ -5,3 +5,4 @@ node_modules/
 test/ergebnis.raw
 store/release/*.zip
 store/banner/__pycache__/
+store/banner/hf_token

@@ -1,0 +1,15 @@
+{
+  "_hinweis": "KI-erzeugte Assets. 'breite' ist die Zielbreite in Bannereinheiten (720 x 320). 'dreh' richtet das Asset entlang +x aus wie die gezeichneten Werkzeuge. Geraete kommen erst wieder hinein, wenn sie das echte Vorbild treffen.",
+  "tisch": {
+    "datei": "t_tisch.png",
+    "zoom": 1.46,
+    "x": -158,
+    "y": -44
+  },
+  "loetkolben": {
+    "datei": "f_loetkolben.png",
+    "typ": "lang",
+    "breite": 176,
+    "dreh": 180
+  }
+}

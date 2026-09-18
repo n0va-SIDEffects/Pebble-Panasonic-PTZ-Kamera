@@ -23,18 +23,66 @@ import os
 import random
 import sys
 
-from PIL import Image, ImageChops
+from PIL import Image
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
 
 import scene
+import uhren
 from render import data_uri, font_uri, rendern, W, H
 
 # Uhraufnahmen und Logo liegen neben diesem Skript, damit das Banner ohne
 # weitere Ablage reproduzierbar ist. Ein Ordner aus dem pebble-publish-Skill
 # laesst sich mit --assets stattdessen einhaengen.
 UHREN = os.path.join(HIER, "assets")
+KI_ORDNER = os.path.join(HIER, "ki")
+
+
+def ki_manifest():
+    """Was an KI-Assets vorliegt. Fehlt der Ordner, wird gezeichnet."""
+    pfad = os.path.join(KI_ORDNER, "manifest.json")
+    if not os.path.exists(pfad):
+        return {}
+    with open(pfad, encoding="utf-8") as f:
+        eintraege = json.load(f)
+    return {k: v for k, v in eintraege.items()
+            if not k.startswith("_") and os.path.exists(os.path.join(KI_ORDNER, v["datei"]))}
+
+
+def ki_bild(eintrag, breite=None, dreh=0, logo_uri=None):
+    """
+    Ein KI-Asset als SVG-Gruppe, um die eigene Mitte gelegt - genau wie
+    die gezeichneten Werkzeuge, damit beide durch dieselben Plaetze
+    laufen. Traegt das Asset ein Logo, kommt es gleich mit hinein.
+    """
+    bild = Image.open(os.path.join(KI_ORDNER, eintrag["datei"])).convert("RGBA")
+    b = breite or eintrag.get("breite", 160)
+    h = b * bild.height / bild.width
+    dreh = eintrag.get("dreh", 0) + dreh
+    logo = ""
+    platz = eintrag.get("logo")
+    if logo_uri and platz:
+        lb = platz["breite"] * b
+        logo = logo_auf_geraet(logo_uri, {
+            "x": -b / 2 + platz["x"] * b, "y": -h / 2 + platz["y"] * h,
+            "breite": lb, "stil": platz.get("stil", "gravur_holz")})
+    innen = (f'<image href="{data_uri(bild)}" x="{-b/2:.1f}" y="{-h/2:.1f}" '
+             f'width="{b:.1f}" height="{h:.1f}"/>{logo}')
+    if dreh:
+        innen = f'<g transform="rotate({dreh})">{innen}</g>'
+    return f'<g filter="url(#schatten_weich)">{innen}</g>'
+
+
+def ki_untergrund(eintrag):
+    """Tischbild als Hintergrund, so skaliert dass die Matte das Bild fuellt."""
+    bild = Image.open(os.path.join(KI_ORDNER, eintrag["datei"])).convert("RGB")
+    zoom = eintrag.get("zoom", 1.0)
+    b = W * zoom
+    h = b * bild.height / bild.width
+    return (f'<image href="{data_uri(bild)}" x="{eintrag.get("x", 0)}" '
+            f'y="{eintrag.get("y", 0)}" width="{b:.1f}" height="{h:.1f}" '
+            f'preserveAspectRatio="xMidYMid slice"/>')
 
 SCHRIFTEN = {
     "titel": os.path.join(HIER, "fonts/archivo_black.ttf"),
@@ -70,11 +118,31 @@ AKZENTE = {
 }
 
 
-def uhr_mit_screenshot(shot_pfad, name="pebble_time_2", hoehe=360):
-    """Screenshot in die Displayflaeche der freigestellten Aufnahme setzen."""
+# Gehaeusefarben, die es wirklich gibt (Core Devices: Time 2 in schwarz
+# und silber, jeweils mit farbigen Akzenten; Time Steel silber, schwarz,
+# gold). Baender sind Wechselteile und duerfen frei variieren.
+UHR_JE_PROJEKT = {
+    "theremin": ("schwarz", "band_rot"),
+    "ptz": ("silber", "band_blau"),
+    "helo": ("schwarz", "band_gruen"),
+}
+UHR_KOMBIS = [
+    ("schwarz", "band_schwarz"), ("schwarz", "band_rot"), ("schwarz", "band_sand"),
+    ("silber", "band_blau"), ("silber", "band_weiss"), ("silber", "band_grau"),
+    ("graphit", "band_orange"),
+]
+
+
+def uhr_mit_screenshot(shot_pfad, name="pebble_time_2", hoehe=360,
+                       gehaeuse="schwarz", band="band_schwarz"):
+    """
+    Screenshot in die Displayflaeche der Aufnahme setzen - in der
+    gewuenschten Farbvariante. Die Form bleibt immer die echte Aufnahme,
+    nur Gehaeuse und Band werden umgerechnet.
+    """
     with open(os.path.join(UHREN, "uhren.json"), encoding="utf-8") as f:
         meta = json.load(f)[name]
-    uhr = Image.open(os.path.join(UHREN, meta["datei"])).convert("RGBA")
+    uhr = uhren.variante(name, gehaeuse, band)
     x0, y0, x1, y1 = meta["display"]
     dw, dh = x1 - x0 + 1, y1 - y0 + 1
 
@@ -320,7 +388,7 @@ PLAETZE = [
     ("oben", 426, 64, -17, 14, 10, "lang"),
     ("unten", 300, 294, -5, 22, 8, "lang"),
     ("links", 86, 208, -78, 12, 12, "kurz"),
-    ("linksoben", 112, 164, -58, 10, 14, "kurz"),
+    ("linksoben", 106, 182, -58, 10, 14, "kurz"),
     ("linksunten", 142, 292, 14, 16, 16, "kurz"),
     ("rechts", 458, 210, 66, 12, 16, "kurz"),
     ("kram_oben", 374, 120, 0, 18, 0, "kram"),
@@ -330,7 +398,7 @@ PLAETZE = [
 ]
 
 
-def tisch_decken(zufall, projekt):
+def tisch_decken(zufall, projekt, ki=None):
     """
     Werkzeuge auf die Plaetze verteilen. Teppichmesser, Loetkolben und
     zwei Feinschraubendreher sind immer dabei - sie tragen die Serie.
@@ -341,6 +409,7 @@ def tisch_decken(zufall, projekt):
     keine Laune, sondern Pflicht: sein Kabel soll zum Bildrand laufen und
     nicht quer ueber das Geraet.
     """
+    ki = ki or {}
     vorrat = scene.werkzeug_vorrat()
     frei = {art: [p for p in PLAETZE if p[6] == art] for art in ("lang", "kurz", "kram")}
     for art in frei:
@@ -368,14 +437,24 @@ def tisch_decken(zufall, projekt):
                               f'rotate({dreh:.1f})">{zeichnung}</g>'))
         return name
 
+    def werkzeug(name, gezeichnet, groesse):
+        """KI-Asset, wenn eines vorliegt - sonst die Zeichnung."""
+        if name in ki:
+            return ki_bild(ki[name], breite=groesse)
+        return gezeichnet
+
     # fester Bestand
-    hinlegen("lang", scene.teppichmesser(136 + zufall.uniform(-8, 10)), zufall.uniform(0.55, 0.9))
-    hinlegen("lang", scene.loetkolben(178 + zufall.uniform(-10, 12)), zufall.uniform(0.55, 0.9),
+    hinlegen("lang", werkzeug("messer", scene.teppichmesser(136 + zufall.uniform(-8, 10)),
+                              136 + zufall.uniform(-8, 10)), zufall.uniform(0.55, 0.9))
+    hinlegen("lang", werkzeug("loetkolben", scene.loetkolben(178 + zufall.uniform(-10, 12)),
+                              176 + zufall.uniform(-10, 12)), zufall.uniform(0.55, 0.9),
              flip=("oben",))
-    hinlegen("kurz", scene.schraubendreher(120 + zufall.uniform(-8, 10), "griff_rot"),
-             zufall.uniform(0.2, 0.9))
-    hinlegen("kurz", scene.schraubendreher(112 + zufall.uniform(-8, 10), "griff_blau"),
-             zufall.uniform(0.2, 0.9))
+    hinlegen("kurz", werkzeug("dreher_rot",
+                              scene.schraubendreher(120 + zufall.uniform(-8, 10), "griff_rot"),
+                              120 + zufall.uniform(-8, 10)), zufall.uniform(0.2, 0.9))
+    hinlegen("kurz", werkzeug("dreher_blau",
+                              scene.schraubendreher(112 + zufall.uniform(-8, 10), "griff_blau"),
+                              112 + zufall.uniform(-8, 10)), zufall.uniform(0.2, 0.9))
 
     # Gaeste aus dem Vorrat
     gross = [n for n, (art, _) in vorrat.items() if art in ("lang", "kurz")]
@@ -399,11 +478,14 @@ def tisch_decken(zufall, projekt):
 
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
            akzent=None, logo_art="auto", uhr_name="pebble_time_2",
-           logo_farbe="auto"):
+           logo_farbe="auto", ki_nutzen=True, uhr_farben="auto"):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
-    uhr = uhr_mit_screenshot(shot, uhr_name, hoehe=352)
+    if uhr_farben == "auto":
+        uhr_farben = UHR_JE_PROJEKT.get(
+            projekt, UHR_KOMBIS[sum(ord(c) for c in projekt) % len(UHR_KOMBIS)])
+    uhr = uhr_mit_screenshot(shot, uhr_name, 352, uhr_farben[0], uhr_farben[1])
     uhr_uri = data_uri(uhr)
     uhr_b, uhr_h = uhr.size
     uhr_x = 608 + zufall.uniform(-6, 6)
@@ -438,14 +520,19 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
     else:
         logo_im_geraet = logo_auf_geraet(logo_uri, scene.PROJEKT_LOGOPLATZ[projekt])
 
-    projekt_svg = scene.PROJEKTE[projekt](akzent, logo_im_geraet)
+    ki = ki_manifest() if ki_nutzen else {}
+    if projekt in ki:
+        projekt_svg = ki_bild(ki[projekt], logo_uri=logo_uri if logo_im_geraet else None)
+        logo_im_geraet = ""
+    else:
+        projekt_svg = scene.PROJEKTE[projekt](akzent, logo_im_geraet)
     px = 272 + zufall.uniform(-10, 10)
     py = 196 + zufall.uniform(-8, 8)
     pd = zufall.uniform(-4, 4)
 
     # Werkzeuge und Geraet nach Tiefe stapeln: manches liegt unter dem
     # Geraet, manches darueber - das macht den Tisch erst unaufgeraeumt.
-    stapel = tisch_decken(zufall, projekt)
+    stapel = tisch_decken(zufall, projekt, ki)
     stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
                         f'rotate({pd:.1f})">{projekt_svg}</g>'))
     if logo_svg:
@@ -456,8 +543,7 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
     return f"""
 <svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
 {scene.defs(schriften, akzent)}
-{scene.untergrund()}
-{scene.schneidematte(zufall)}
+{ki_untergrund(ki["tisch"]) if "tisch" in ki else scene.untergrund() + scene.schneidematte(zufall)}
 {tisch}
 
 <!-- Pebble: liegt obenauf, Armbaender laufen aus dem Bild -->
@@ -485,6 +571,13 @@ def main():
                    choices=["auto"] + LOGO_ARTEN)
     p.add_argument("--logo-farbe", default="auto",
                    choices=["auto", "original", "akzent", "hell", "dunkel"])
+    p.add_argument("--uhr-gehaeuse", default=None,
+                   help="schwarz, silber, graphit, gold")
+    p.add_argument("--uhr-band", default=None,
+                   help="band_schwarz, band_rot, band_blau, band_weiss, "
+                        "band_orange, band_gruen, band_grau, band_sand, band_leder")
+    p.add_argument("--gezeichnet", action="store_true",
+                   help="KI-Assets ignorieren und alles zeichnen")
     p.add_argument("--akzent", default=None)
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--uhr", default="pebble_time_2")
@@ -497,8 +590,13 @@ def main():
         global UHREN
         UHREN = a.assets
 
+    farben = "auto"
+    if a.uhr_gehaeuse or a.uhr_band:
+        vorgabe = UHR_JE_PROJEKT.get(a.projekt, ("schwarz", "band_schwarz"))
+        farben = (a.uhr_gehaeuse or vorgabe[0], a.uhr_band or vorgabe[1])
     svg = banner(a.projekt, a.shot, a.titel, a.unterzeile, a.plattform, a.logo,
-                 a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe)
+                 a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe,
+                 ki_nutzen=not a.gezeichnet, uhr_farben=farben)
     rendern(svg, a.out)
     print("geschrieben:", a.out)
 

@@ -28,6 +28,11 @@ dem gerade genau diese App entsteht.
   Hinsehen gefunden werden, nicht beim ersten. Wo das nicht passt, gibt
   es das Logo weiterhin als Aufkleber, Alu-Plakette, Notizzettel,
   Tintenstempel oder Siebdruck auf der Matte (`--logo-art`).
+- **Die Uhr.** Jede App zeigt die Pebble in einer anderen Farbe: Gehaeuse
+  schwarz oder silber (beides offizielle Varianten von Core Devices),
+  dazu ein Armband aus der Palette - Baender sind Wechselteile, die
+  duerfen frei variieren. `--uhr-gehaeuse` und `--uhr-band` setzen es von
+  Hand, sonst entscheidet die Zuordnung in `UHR_JE_PROJEKT`.
 - **Der Tisch selbst.** `--seed` verteilt die Werkzeuge neu: welcher
   Platz belegt wird, in welcher Richtung ein Werkzeug liegt, was aus dem
   Vorrat dazukommt (Pinzette, Seitenschneider, Entloetpumpe, Bleistift,
@@ -42,11 +47,11 @@ sich deutlich.
 
 ```bash
 python3 make_desk_banner.py \
-    --projekt ptz \
-    --shot ../release/screenshots_emery/1_motion.png \
-    --titel "PTZ Remote" \
-    --unterzeile "PAN, TILT AND ZOOM FROM THE WRIST" \
-    --seed 11 \
+    --projekt theremin \
+    --shot ../release/screenshots_en/03_playing_sine.png \
+    --titel "Theremin" \
+    --unterzeile "PLAY IT WITH YOUR WRIST" \
+    --seed 7 \
     --out banner_720x320.png
 ```
 
@@ -81,6 +86,38 @@ Ein neues Werkzeug kommt genauso dazu: zeichnen, entlang +x um die eigene
 Mitte, und in `werkzeug_vorrat()` als `lang`, `kurz` oder `kram`
 eintragen.
 
+## Farbvarianten der Uhr
+
+Die Form kommt immer aus einer echten Aufnahme (`assets/`), nur die Farbe
+wird umgerechnet: `uhren.py` nimmt die Helligkeit des Originals und legt
+den Farbton der gewuenschten Variante darueber, Gehaeuse und Armband
+getrennt, das Display bleibt ausgespart. Ein Bildmodell taugt dafuer
+nicht - es kennt kein Pebble-Gehaeuse und erfindet eine beliebige
+Smartwatch.
+
+| | |
+|---|---|
+| Gehaeuse | `schwarz`, `silber`, `graphit`, `gold` |
+| Baender | `band_schwarz`, `band_weiss`, `band_rot`, `band_blau`, `band_orange`, `band_gruen`, `band_grau`, `band_sand`, `band_leder` |
+
+Eine weitere Uhr aufnehmen: freistellen, nach `assets/`, Eintrag in
+`assets/uhren.json`, und in `uhren.GEHAEUSE` die beiden Bildzeilen
+hinterlegen, zwischen denen das Gehaeuse sitzt.
+
+## Erzeugte Assets
+
+`ki_assets.py` erzeugt Bildteile mit einem Modell auf Hugging Face
+(Tisch, Werkzeuge) und stellt sie frei. Was in `ki/manifest.json` steht
+und als Datei vorliegt, benutzt das Banner automatisch; `--gezeichnet`
+ignoriert alles davon. Der gemeinsame Stilbaustein `STIL` steckt in jedem
+Prompt - ohne ihn passen die Teile nicht zusammen.
+
+Dafuer wird ein Hugging-Face-Token gebraucht (Typ Read,
+huggingface.co/settings/tokens): entweder in `HF_TOKEN` oder als Datei
+`store/banner/hf_token`. Die Datei steht in `.gitignore` und gehoert
+nicht ins Repo. Die kostenlose GPU-Quota reicht fuer wenige Bilder pro
+Tag; groessere Saetze entstehen in mehreren Durchgaengen.
+
 ## Voraussetzungen
 
 - Python 3 mit Pillow (`pip install pillow`)
@@ -93,6 +130,9 @@ eintragen.
 make_desk_banner.py   Zusammenbau, Plaetze, Titel, Logo-Formen, Kommandozeile
 scene.py              Tisch, Matte, Werkzeuge, Kleinkram, Projektgeraete
 render.py             SVG -> PNG ueber den Browser, 2-fach ueberabgetastet
+uhren.py              Farbvarianten der Pebble aus den echten Aufnahmen
+ki_assets.py          Bildteile erzeugen und freistellen (Hugging Face)
 assets/               freigestellte Uhraufnahmen, uhren.json, Logo
+ki/                   erzeugte Assets und ihr manifest.json
 fonts/                eingebettete Schriften (siehe SCHRIFTEN.md)
 ```

@@ -410,69 +410,64 @@ def zettel(zufall, text_zeilen, breite=112, hoehe=86, akzent="#ffffff"):
 
 def projekt_theremin(akzent, logo=""):
     """
-    Selbstbau-Theremin: Holzkasten mit offener Platine, Stabantenne fuer
-    die Tonhoehe, Schleifenantenne fuer die Lautstaerke. Die Stabantenne
-    laeuft absichtlich aus dem Kasten heraus - sie macht das Geraet auf
-    einen Blick erkennbar.
+    Ein richtiges Theremin, kein Selbstbaukasten: Holzkorpus in
+    Dreiviertelansicht, rechts die senkrechte Stabantenne fuer die
+    Tonhoehe, links die liegende Schleifenantenne fuer die Lautstaerke.
+    Genau diese beiden Antennen machen das Instrument erkennbar - sie
+    duerfen deshalb ruhig aus dem Bild ragen.
     """
     return f"""
 <g class="projekt">
   <!-- Stabantenne (Tonhoehe) -->
-  <g transform="rotate(-27)" filter="url(#schatten_klein)">
-    <rect x="70" y="-3.4" width="196" height="6.8" rx="3.4" fill="url(#stahl)"/>
-    <rect x="70" y="-3.4" width="196" height="2.4" rx="1.2" fill="#fff" opacity="0.5"/>
-    <circle cx="266" cy="0" r="5.4" fill="#e7edf3"/>
-    <rect x="62" y="-7" width="16" height="14" rx="3" fill="#2b323b"/>
+  <g transform="translate(86,-30)" filter="url(#schatten_klein)">
+    <rect x="-3.2" y="-186" width="6.4" height="192" rx="3.2" fill="url(#stahl)"/>
+    <rect x="-3.2" y="-186" width="2.2" height="192" fill="#fff" opacity="0.55"/>
+    <circle cx="0" cy="-188" r="4.4" fill="#e7edf3"/>
+    <rect x="-7" y="-6" width="14" height="16" rx="3" fill="#20252c"/>
   </g>
   <!-- Schleifenantenne (Lautstaerke) -->
-  <g transform="translate(-116,26) rotate(14)" filter="url(#schatten_klein)">
-    <ellipse rx="40" ry="25" fill="none" stroke="#9aa4ae" stroke-width="7"/>
-    <ellipse rx="40" ry="25" fill="none" stroke="#e3e9ef" stroke-width="3"/>
-    <rect x="30" y="-4" width="40" height="8" rx="4" fill="url(#stahl)"/>
-    <rect x="62" y="-8" width="14" height="16" rx="3" fill="#2b323b"/>
+  <g transform="translate(-104,6)" filter="url(#schatten_klein)">
+    <path d="M 6 -34 C -54 -34, -70 -6, -70 6 C -70 22, -50 34, 6 34"
+          fill="none" stroke="#9aa4ae" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 6 -34 C -54 -34, -70 -6, -70 6 C -70 22, -50 34, 6 34"
+          fill="none" stroke="#e3e9ef" stroke-width="2.6" stroke-linecap="round"/>
+    <rect x="0" y="-38" width="16" height="12" rx="3" fill="#20252c"/>
+    <rect x="0" y="26" width="16" height="12" rx="3" fill="#20252c"/>
   </g>
-  <!-- Gehaeuse -->
-  <g transform="rotate(-3)" filter="url(#schatten_weich)">
-    <rect x="-78" y="-52" width="178" height="104" rx="8" fill="#7a5433"/>
-    <rect x="-78" y="-52" width="178" height="104" rx="8" filter="url(#holzmaser)"
-          opacity="0.40" style="mix-blend-mode:overlay"/>
-    <rect x="-78" y="-52" width="178" height="16" rx="8" fill="#fff" opacity="0.12"/>
-    <rect x="-73" y="-47" width="168" height="94" rx="6" fill="none" stroke="#3a2614"
-          stroke-width="2" opacity="0.6"/>
-    <!-- offene Platine -->
-    <rect x="-68" y="-40" width="96" height="62" rx="4" fill="#10402e"/>
-    <rect x="-68" y="-40" width="96" height="62" rx="4" fill="none" stroke="#0a2a1e" stroke-width="1.5"/>
-    <g fill="#1d1f24">
-      <rect x="-60" y="-33" width="30" height="15" rx="2"/>
-      <rect x="-24" y="-33" width="17" height="15" rx="2"/>
-      <rect x="-60" y="-12" width="21" height="21" rx="2"/>
+  <!-- Korpus, Dreiviertelansicht -->
+  <g filter="url(#schatten_weich)">
+    <!-- Deckel -->
+    <path d="M -92 -34 L 88 -34 L 100 -16 L -80 -16 Z" fill="#8a6136"/>
+    <path d="M -92 -34 L 88 -34 L 88 -30 L -92 -30 Z" fill="#b48753" opacity="0.8"/>
+    <!-- Front -->
+    <rect x="-80" y="-16" width="180" height="54" rx="5" fill="#6d4a28"/>
+    <rect x="-80" y="-16" width="180" height="54" rx="5" filter="url(#holzmaser)"
+          opacity="0.45" style="mix-blend-mode:overlay"/>
+    <rect x="-80" y="30" width="180" height="8" rx="4" fill="#000" opacity="0.28"/>
+    <!-- Bedienfeld -->
+    <rect x="-70" y="-10" width="86" height="40" rx="4" fill="#2a2f37"/>
+    <rect x="-70" y="-10" width="86" height="12" rx="4" fill="#fff" opacity="0.07"/>
+    <g>
+      <circle cx="-52" cy="10" r="11" fill="#171b21"/>
+      <circle cx="-52" cy="10" r="11" fill="none" stroke="#5a6572" stroke-width="1.8"/>
+      <line x1="-52" y1="10" x2="-58" y2="2" stroke="{akzent}" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="-24" cy="10" r="11" fill="#171b21"/>
+      <circle cx="-24" cy="10" r="11" fill="none" stroke="#5a6572" stroke-width="1.8"/>
+      <line x1="-24" y1="10" x2="-18" y2="3" stroke="{akzent}" stroke-width="2.4" stroke-linecap="round"/>
+      <rect x="-6" y="2" width="18" height="16" rx="3" fill="#171b21"/>
+      <rect x="-4" y="4" width="14" height="5" rx="2" fill="{akzent}" opacity="0.85"/>
     </g>
-    <g fill="#c8b06a" opacity="0.95">
-      <rect x="-1" y="-33" width="24" height="9" rx="1.5"/>
-      <rect x="-1" y="-20" width="24" height="9" rx="1.5"/>
-    </g>
-    <g stroke="#cbb06a" stroke-width="1.6" opacity="0.9" fill="none">
-      <path d="M -60 4 H -34 V 16 H -6"/>
-      <path d="M -24 -14 H -6 V 16"/>
-      <path d="M 12 -6 V 16 H -34"/>
-    </g>
-    <g fill="#e3c87a">
-      <circle cx="-60" cy="4" r="2.2"/><circle cx="-34" cy="16" r="2.2"/>
-      <circle cx="-6" cy="16" r="2.2"/><circle cx="12" cy="-6" r="2.2"/>
-    </g>
-    <!-- Drehknoepfe -->
-    <g filter="url(#schatten_klein)">
-      <circle cx="58" cy="-22" r="19" fill="#1b2029"/>
-      <circle cx="58" cy="-22" r="19" fill="none" stroke="#586271" stroke-width="2.4"/>
-      <circle cx="58" cy="-22" r="10" fill="#2f3742"/>
-      <line x1="58" y1="-22" x2="68" y2="-37" stroke="{akzent}" stroke-width="3.2" stroke-linecap="round"/>
-      <circle cx="62" cy="22" r="14" fill="#1b2029"/>
-      <circle cx="62" cy="22" r="14" fill="none" stroke="#586271" stroke-width="2"/>
-      <line x1="62" y1="22" x2="53" y2="13" stroke="{akzent}" stroke-width="2.6" stroke-linecap="round"/>
+    <!-- Lueftungsschlitze und Schild -->
+    <g fill="#4d341c" opacity="0.8">
+      <rect x="28" y="-10" width="60" height="3" rx="1.5"/>
+      <rect x="28" y="-4" width="60" height="3" rx="1.5"/>
     </g>
     {logo}
-    <circle cx="90" cy="40" r="4" fill="{akzent}"/>
-    <circle cx="90" cy="40" r="9" fill="{akzent}" opacity="0.4" filter="url(#glimmen)"/>
+    <circle cx="92" cy="28" r="3.2" fill="{akzent}"/>
+    <circle cx="92" cy="28" r="7.5" fill="{akzent}" opacity="0.4" filter="url(#glimmen)"/>
+    <!-- Fuesse -->
+    <rect x="-72" y="36" width="16" height="6" rx="3" fill="#1b1f26"/>
+    <rect x="74" y="36" width="16" height="6" rx="3" fill="#1b1f26"/>
   </g>
 </g>
 """
@@ -564,7 +559,7 @@ PROJEKTE = {
 # system des Geraets, also mitgedreht. Die Stile stehen in
 # make_desk_banner.logo_auf_geraet().
 PROJEKT_LOGOPLATZ = {
-    "theremin": {"x": -56, "y": 24, "breite": 98, "stil": "gravur_holz"},
+    "theremin": {"x": 28, "y": 4, "breite": 62, "stil": "gravur_holz"},
     "ptz": {"x": -58, "y": 46, "breite": 62, "stil": "druck_dunkel"},
     "helo": {"x": 20, "y": 10, "breite": 70, "stil": "aetzung_hell"},
 }
