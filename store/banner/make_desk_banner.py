@@ -437,14 +437,14 @@ def logo_auf_geraet(uri, platz):
 PLAETZE = [
     ("oben", 426, 64, -17, 14, 10, "lang"),
     ("unten", 300, 294, -5, 22, 8, "lang"),
-    ("links", 86, 208, -78, 12, 12, "kurz"),
+    ("links", 94, 206, -78, 10, 12, "kurz"),
     ("linksoben", 106, 182, -58, 10, 14, "kurz"),
     ("linksunten", 142, 292, 14, 16, 16, "kurz"),
     ("rechts", 458, 210, 66, 12, 16, "kurz"),
     ("kram_oben", 374, 120, 0, 18, 0, "kram"),
     ("kram_untenrechts", 452, 290, 0, 12, 0, "kram"),
     ("kram_untenlinks", 54, 292, 0, 10, 0, "kram"),
-    ("kram_links", 58, 248, 0, 12, 0, "kram"),
+    ("kram_links", 74, 244, 0, 10, 0, "kram"),
 ]
 
 
