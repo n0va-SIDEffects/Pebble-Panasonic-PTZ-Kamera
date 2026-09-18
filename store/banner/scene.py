@@ -12,11 +12,11 @@ import random
 W, H = 720, 320
 
 # --- Untergrund -----------------------------------------------------------
-HOLZ_DUNKEL = "#2e2118"
-HOLZ_HELL = "#5a4230"
-MATTE = "#20403a"
-MATTE_HELL = "#2a5149"
-RASTER = "#4d8d80"
+HOLZ_DUNKEL = "#332315"
+HOLZ_HELL = "#8a6136"
+MATTE = "#1f463c"
+MATTE_HELL = "#2c5a4d"
+RASTER = "#63b39f"
 MATTE_KANTE = "#173029"
 
 # --- Metall / Kunststoff --------------------------------------------------
@@ -38,9 +38,10 @@ def defs(schriften, akzent):
     text {{ paint-order: stroke fill; }}
   </style>
 
-  <linearGradient id="holz" x1="0" y1="0" x2="0.8" y2="1">
+  <linearGradient id="holz" x1="0.05" y1="0" x2="0.9" y2="1">
     <stop offset="0" stop-color="{HOLZ_HELL}"/>
-    <stop offset="0.55" stop-color="#43301f"/>
+    <stop offset="0.38" stop-color="#6b4a2a"/>
+    <stop offset="0.72" stop-color="#4a3420"/>
     <stop offset="1" stop-color="{HOLZ_DUNKEL}"/>
   </linearGradient>
 
@@ -115,84 +116,105 @@ def defs(schriften, akzent):
 """
 
 
-def untergrund():
-    """Holzplatte mit Maserung."""
+def untergrund(zufall=None):
+    """
+    Werkbankplatte aus einzelnen Brettern. Die Fugen sind das, woran man
+    einen Tisch erkennt - eine glatte braune Flaeche liest sich als
+    Hintergrund, nicht als Moebel.
+    """
+    fugen = []
+    for y in (58, 152, 246):
+        fugen.append(f'<path d="M -10 {y} C 200 {y-4}, 460 {y+5}, 740 {y-2}" '
+                     f'stroke="#17100a" stroke-width="3.4" fill="none" opacity="0.75"/>')
+        fugen.append(f'<path d="M -10 {y+3} C 200 {y-1}, 460 {y+8}, 740 {y+1}" '
+                     f'stroke="#7d5c3c" stroke-width="1.4" fill="none" opacity="0.35"/>')
     return f"""
 <g id="tisch">
   <rect width="{W}" height="{H}" fill="url(#holz)"/>
-  <rect width="{W}" height="{H}" filter="url(#holzmaser)" opacity="0.30"
+  <rect width="{W}" height="{H}" filter="url(#holzmaser)" opacity="0.42"
         style="mix-blend-mode:overlay"/>
-  <g opacity="0.30" stroke="#1c130c" fill="none">
-    <path d="M -20 44 C 180 30, 420 66, 760 40" stroke-width="2.2"/>
-    <path d="M -20 150 C 210 168, 430 128, 760 158" stroke-width="1.6"/>
-    <path d="M -20 262 C 240 244, 470 286, 760 256" stroke-width="2.6"/>
+  <g opacity="0.26" stroke="#1c130c" fill="none">
+    <path d="M -20 30 C 180 16, 420 52, 760 26" stroke-width="2.2"/>
+    <path d="M -20 104 C 210 122, 430 82, 760 112" stroke-width="1.6"/>
+    <path d="M -20 196 C 240 178, 470 220, 760 190" stroke-width="2.6"/>
+    <path d="M -20 292 C 190 306, 450 268, 760 296" stroke-width="2"/>
   </g>
+  {''.join(fugen)}
+  <rect width="{W}" height="{H}" fill="#3a2414" opacity="0.18"
+        style="mix-blend-mode:multiply"/>
 </g>
 """
 
 
 def schneidematte(zufall):
     """
-    Grosse Schneidematte, leicht schraeg, laeuft rechts und unten aus dem
-    Bild. Oben links bleibt Holz frei - dort steht der Titel.
+    Die Schneidematte liegt schraeg auf der Platte und laeuft rechts und
+    unten aus dem Bild. Links und oben bleibt Holz stehen, damit man
+    sieht, dass hier eine Matte liegt und nicht der Hintergrund gruen ist.
+    Ihre Dicke macht der dunkle Streifen unter der Kante.
     """
-    drehung = round(-2.1 + zufall.uniform(-0.7, 0.7), 2)
-    x0, y0 = 56 + zufall.uniform(-8, 8), 62 + zufall.uniform(-6, 6)
-    breite, hoehe = 780, 340
+    drehung = round(-2.4 + zufall.uniform(-0.8, 0.8), 2)
+    x0, y0 = 62 + zufall.uniform(-8, 8), 70 + zufall.uniform(-6, 6)
+    breite, hoehe = 760, 330
 
     raster = []
-    for i in range(1, 40):
+    for i in range(1, 39):
         x = i * 20
         if x >= breite:
             break
-        dick = 1.5 if i % 5 == 0 else 0.7
+        dick = 1.6 if i % 5 == 0 else 0.8
         raster.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{hoehe}" stroke-width="{dick}"/>')
-    for i in range(1, 18):
+    for i in range(1, 17):
         y = i * 20
         if y >= hoehe:
             break
-        dick = 1.5 if i % 5 == 0 else 0.7
+        dick = 1.6 if i % 5 == 0 else 0.8
         raster.append(f'<line x1="0" y1="{y}" x2="{breite}" y2="{y}" stroke-width="{dick}"/>')
 
-    # Schnittspuren: kurze helle Kratzer, damit die Matte benutzt aussieht
     spuren = []
-    for _ in range(14):
+    for _ in range(18):
         sx = zufall.uniform(30, breite - 40)
         sy = zufall.uniform(30, hoehe - 40)
-        laenge = zufall.uniform(18, 70)
+        laenge = zufall.uniform(20, 78)
         winkel = zufall.choice([0, 0, 90, zufall.uniform(-40, 40)])
         dx = laenge * math.cos(math.radians(winkel))
         dy = laenge * math.sin(math.radians(winkel))
         spuren.append(f'<line x1="{sx:.0f}" y1="{sy:.0f}" x2="{sx+dx:.0f}" y2="{sy+dy:.0f}" '
-                      f'stroke-width="{zufall.uniform(0.8,1.6):.1f}" opacity="{zufall.uniform(0.10,0.26):.2f}"/>')
+                      f'stroke-width="{zufall.uniform(0.9,1.8):.1f}" '
+                      f'opacity="{zufall.uniform(0.12,0.30):.2f}"/>')
 
-    # Massskala am oberen und linken Rand
     skala = []
     for i in range(1, 38):
         x = i * 20
         if x >= breite:
             break
         lang = i % 5 == 0
-        skala.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{10 if lang else 5}" stroke-width="1.2"/>')
+        skala.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{12 if lang else 6}" stroke-width="1.4"/>')
     for i in range(1, 17):
         y = i * 20
         if y >= hoehe:
             break
         lang = i % 5 == 0
-        skala.append(f'<line x1="0" y1="{y}" x2="{10 if lang else 5}" y2="{y}" stroke-width="1.2"/>')
+        skala.append(f'<line x1="0" y1="{y}" x2="{12 if lang else 6}" y2="{y}" stroke-width="1.4"/>')
 
     return f"""
-<g id="matte" transform="translate({x0:.1f},{y0:.1f}) rotate({drehung})" filter="url(#schatten_gross)">
-  <rect x="0" y="0" width="{breite}" height="{hoehe}" rx="10" fill="url(#mattenlicht)"/>
-  <g stroke="{RASTER}" opacity="0.38">{''.join(raster)}</g>
-  <g stroke="#e6f6f0" opacity="0.65">{''.join(skala)}</g>
-  <g stroke="#dff3ec">{''.join(spuren)}</g>
-  <rect x="0" y="0" width="{breite}" height="{hoehe}" rx="10" filter="url(#koernung)"
-        opacity="0.22" style="mix-blend-mode:overlay"/>
-  <rect x="0.5" y="0.5" width="{breite-1}" height="{hoehe-1}" rx="10" fill="none"
-        stroke="{MATTE_KANTE}" stroke-width="2"/>
-  <rect x="2.5" y="2.5" width="{breite-5}" height="{hoehe-5}" rx="8" fill="none"
-        stroke="#6fb3a4" stroke-width="1" opacity="0.35"/>
+<g id="matte" transform="translate({x0:.1f},{y0:.1f}) rotate({drehung})">
+  <!-- Schatten auf der Platte -->
+  <rect x="3" y="7" width="{breite}" height="{hoehe}" rx="12" fill="#000" opacity="0.5"
+        filter="url(#schatten_gross)"/>
+  <!-- Kante: die Matte ist drei Millimeter dick -->
+  <rect x="0" y="4" width="{breite}" height="{hoehe}" rx="12" fill="#0f2320"/>
+  <rect x="0" y="0" width="{breite}" height="{hoehe}" rx="12" fill="url(#mattenlicht)"/>
+  <g stroke="{RASTER}" opacity="0.40">{''.join(raster)}</g>
+  <g stroke="#e8f7f1" opacity="0.62">{''.join(skala)}</g>
+  <g stroke="#e8f7f1">{''.join(spuren)}</g>
+  <rect x="0" y="0" width="{breite}" height="{hoehe}" rx="12" filter="url(#koernung)"
+        opacity="0.26" style="mix-blend-mode:overlay"/>
+  <!-- Rundung und Lichtkante -->
+  <rect x="1" y="1" width="{breite-2}" height="{hoehe-2}" rx="12" fill="none"
+        stroke="#0d1f1c" stroke-width="2.4"/>
+  <rect x="3" y="3" width="{breite-6}" height="{hoehe-6}" rx="10" fill="none"
+        stroke="#8fd0bf" stroke-width="1.4" opacity="0.45"/>
 </g>
 """
 

@@ -56,6 +56,13 @@ LOGO_JE_PROJEKT = {
     "helo": "geraet",
 }
 
+# Farbe des Logos je App. Grau ist nur eine Moeglichkeit von vieren.
+LOGO_FARBE_JE_PROJEKT = {
+    "theremin": "original",   # oranger Aufdruck auf dem Holzgehaeuse
+    "ptz": "dunkel",          # dunkles Typenschild auf dem weissen Korpus
+    "helo": "akzent",         # in der Akzentfarbe in die Frontplatte geaetzt
+}
+
 AKZENTE = {
     "theremin": "#35b6f0",
     "ptz": "#ff4d3d",
@@ -231,12 +238,55 @@ def logo_gekritzelt(uri, zufall, x, y, dreh, breite=104):
 """
 
 
+def hex_zu_rgb(wert):
+    wert = wert.lstrip("#")
+    return tuple(int(wert[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def logo_faerben(logo, modus, akzent):
+    """
+    Das Logo ist orange mit schwarzen Linien. Grau war nur eine von
+    mehreren Moeglichkeiten - hier sind die anderen:
+
+    original  Orange und Schwarz wie im Original
+    akzent    das Orange wird zur Akzentfarbe der App, Schwarz bleibt
+    hell      alles hell, fuer dunkle Gehaeuse
+    dunkel    alles dunkel, fuer helle Gehaeuse und fuer Gravuren
+    """
+    if modus == "original":
+        return logo
+    ziel = hex_zu_rgb(akzent) if modus == "akzent" else None
+    logo = logo.copy()
+    px = logo.load()
+    for y in range(logo.height):
+        for x in range(logo.width):
+            r, g, b, a = px[x, y]
+            if a < 8:
+                continue
+            orange = r > 140 and b < 110 and r > b + 70
+            if modus == "akzent":
+                if orange:
+                    # Helligkeit des Originalpixels auf die Zielfarbe uebertragen,
+                    # damit Kanten und Verlauf erhalten bleiben
+                    f = (0.35 + 0.65 * (r / 255.0))
+                    px[x, y] = (min(255, int(ziel[0] * f)), min(255, int(ziel[1] * f)),
+                                min(255, int(ziel[2] * f)), a)
+            elif modus == "hell":
+                hell = max(r, g, b)
+                wert = 235 if orange else min(255, 170 + hell // 3)
+                px[x, y] = (wert, wert, min(255, wert + 6), a)
+            elif modus == "dunkel":
+                dunkel = 46 if orange else 26
+                px[x, y] = (dunkel, dunkel, dunkel + 4, a)
+    return logo
+
+
 def logo_auf_geraet(uri, platz):
     """
-    Logo direkt auf dem Geraet: in das Holz gelasert, auf den hellen
-    Kamerakorpus gedruckt, in die dunkle Frontplatte geaetzt. Das ist die
-    dezenteste Form - das Logo gehoert dann zum Geraet und nicht zum Bild,
-    man findet es beim zweiten Hinsehen.
+    Logo direkt auf dem Geraet: gelasert, gedruckt, geaetzt. Die Farbe
+    kommt schon im Bild an (siehe logo_faerben); hier entsteht nur noch
+    die Praegung - ein versetzter Schatten und eine Lichtkante, damit das
+    Logo im Material sitzt statt darauf zu schweben.
     """
     breite = platz["breite"]
     hoehe = breite * 0.41
@@ -244,29 +294,24 @@ def logo_auf_geraet(uri, platz):
     x, y = platz["x"], platz["y"]
 
     if stil == "gravur_holz":
-        # Lasergravur: dunkel eingebrannt, mit einer hellen Lichtkante an
-        # der Oberkante - erst die macht die Vertiefung sichtbar.
         return f"""
 <g transform="translate({x},{y})">
-  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
-         style="filter:grayscale(1) brightness(0.1)" opacity="0.52"/>
-  <image href="{uri}" x="0.6" y="-1.1" width="{breite}" height="{hoehe:.1f}"
-         style="filter:grayscale(1) brightness(2.6)" opacity="0.26"/>
+  <image href="{uri}" x="0.7" y="1.1" width="{breite}" height="{hoehe:.1f}"
+         style="filter:grayscale(1) brightness(0)" opacity="0.38"/>
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}" opacity="0.88"/>
 </g>
 """
     if stil == "druck_dunkel":
         return f"""
 <g transform="translate({x},{y})">
-  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
-         style="filter:grayscale(1) brightness(0.4) contrast(1.2)" opacity="0.48"/>
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}" opacity="0.82"/>
 </g>
 """
     return f"""
 <g transform="translate({x},{y})">
   <image href="{uri}" x="0" y="1" width="{breite}" height="{hoehe:.1f}"
-         style="filter:grayscale(1) brightness(0)" opacity="0.45"/>
-  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}"
-         style="filter:grayscale(1) brightness(2.8)" opacity="0.42"/>
+         style="filter:grayscale(1) brightness(0)" opacity="0.4"/>
+  <image href="{uri}" x="0" y="0" width="{breite}" height="{hoehe:.1f}" opacity="0.8"/>
 </g>
 """
 
@@ -353,7 +398,8 @@ def tisch_decken(zufall, projekt):
 
 
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
-           akzent=None, logo_art="auto", uhr_name="pebble_time_2"):
+           akzent=None, logo_art="auto", uhr_name="pebble_time_2",
+           logo_farbe="auto"):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
@@ -364,7 +410,10 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
     uhr_y = 150 + zufall.uniform(-8, 8)
     uhr_dreh = round(9 + zufall.uniform(-3.5, 3.5), 1)
 
-    logo_uri = data_uri(logo_freistellen(logo_pfad))
+    logo_bild = logo_freistellen(logo_pfad)
+    if logo_farbe == "auto":
+        logo_farbe = LOGO_FARBE_JE_PROJEKT.get(projekt, "original")
+    logo_uri = data_uri(logo_faerben(logo_bild, logo_farbe, akzent))
     schriften = {k: font_uri(v) for k, v in SCHRIFTEN.items()}
 
     if logo_art == "auto":
@@ -434,6 +483,8 @@ def main():
     p.add_argument("--logo", default=os.path.join(HIER, "assets/side_effects_logo.png"))
     p.add_argument("--logo-art", default="auto",
                    choices=["auto"] + LOGO_ARTEN)
+    p.add_argument("--logo-farbe", default="auto",
+                   choices=["auto", "original", "akzent", "hell", "dunkel"])
     p.add_argument("--akzent", default=None)
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--uhr", default="pebble_time_2")
@@ -447,7 +498,7 @@ def main():
         UHREN = a.assets
 
     svg = banner(a.projekt, a.shot, a.titel, a.unterzeile, a.plattform, a.logo,
-                 a.seed, a.akzent, a.logo_art, a.uhr)
+                 a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe)
     rendern(svg, a.out)
     print("geschrieben:", a.out)
 
