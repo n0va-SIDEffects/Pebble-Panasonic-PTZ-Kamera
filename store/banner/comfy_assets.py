@@ -135,6 +135,61 @@ def erzeugen(server, workflow, ziel, wartezeit=600):
     raise SystemExit("Zeitueberschreitung beim Warten auf ComfyUI")
 
 
+def hochladen(server, pfad):
+    """
+    Bild in den input-Ordner von ComfyUI legen (POST /upload/image).
+    Multipart von Hand, damit das Skript ohne requests auskommt.
+    """
+    grenze = "----banner" + str(int(time.time() * 1000))
+    name = os.path.basename(pfad)
+    with open(pfad, "rb") as f:
+        inhalt = f.read()
+    teile = []
+    teile.append(("--" + grenze + "\r\n"
+                  'Content-Disposition: form-data; name="image"; filename="' + name + '"\r\n'
+                  "Content-Type: image/png\r\n\r\n").encode("utf-8"))
+    teile.append(inhalt)
+    teile.append(("\r\n--" + grenze + "\r\n"
+                  'Content-Disposition: form-data; name="overwrite"\r\n\r\n'
+                  "true\r\n"
+                  "--" + grenze + "--\r\n").encode("utf-8"))
+    koerper = b"".join(teile)
+    anfrage = urllib.request.Request(
+        f"http://{server}/upload/image", data=koerper,
+        headers={"Content-Type": "multipart/form-data; boundary=" + grenze})
+    with urllib.request.urlopen(anfrage, timeout=60) as antwort:
+        return json.loads(antwort.read()).get("name", name)
+
+
+def veredeln(server, vorlage, workflow_pfad, ziel, staerke, prompt, seed):
+    """
+    Die fertige Szene noch einmal durch das Bildmodell schicken, aber nur
+    leicht: So gleichen sich Licht, Schatten und Perspektive der einzeln
+    erzeugten Teile an, ohne dass die Anordnung verlorengeht. Je hoeher
+    die Staerke, desto freier wird das Modell - ueber etwa 0.5 erfindet
+    es die Szene neu.
+    """
+    if not os.path.exists(workflow_pfad):
+        raise SystemExit("Kein img2img-Workflow: " + workflow_pfad)
+    with open(workflow_pfad, encoding="utf-8") as f:
+        workflow = json.load(f)
+
+    name = hochladen(server, vorlage)
+    print("hochgeladen als:", name)
+    for knoten in workflow.values():
+        if "image" in knoten.get("inputs", {}) and knoten.get("class_type") == "LoadImage":
+            knoten["inputs"]["image"] = name
+    for knoten_id, feld in _felder(workflow, "denoise"):
+        workflow[knoten_id]["inputs"][feld] = staerke
+    for name_feld in ("seed", "noise_seed"):
+        for knoten_id, feld in _felder(workflow, name_feld):
+            workflow[knoten_id]["inputs"][feld] = seed
+    texte = _text_knoten(workflow)
+    if texte and prompt:
+        workflow[texte[0]]["inputs"]["text"] = prompt
+    return erzeugen(server, workflow, ziel)
+
+
 # --- Freistellen ----------------------------------------------------------
 
 def freistellen(pfad, ziel, hintergrund="weiss", toleranz=18):
@@ -178,7 +233,26 @@ def main():
     p.add_argument("--nur", default="", help="nur diese Assets, mit Komma getrennt")
     p.add_argument("--neu", action="store_true", help="auch schon vorhandene neu erzeugen")
     p.add_argument("--hintergrund", default="weiss", choices=["weiss", "gruen"])
+    p.add_argument("--veredeln", default="",
+                   help="eine fertige Szene noch einmal leicht durchs Modell schicken")
+    p.add_argument("--staerke", type=float, default=0.35,
+                   help="wie frei das Modell dabei sein darf (0.2 vorsichtig, 0.5 viel)")
+    p.add_argument("--img2img", default=os.path.join(HIER, "workflow_img2img.json"))
     a = p.parse_args()
+
+    if a.veredeln:
+        laeuft, auskunft = erreichbar(a.server)
+        if not laeuft:
+            raise SystemExit(f"ComfyUI auf {a.server} nicht erreichbar: {auskunft}")
+        ziel = os.path.splitext(a.veredeln)[0] + "_veredelt.png"
+        with open(a.liste, encoding="utf-8") as f:
+            stil = json.load(f)["stil"]
+        veredeln(a.server, a.veredeln, a.img2img, ziel, a.staerke,
+                 stil + ". top-down view of an electronics workbench with tools on a green "
+                        "cutting mat, even light, consistent perspective",
+                 7)
+        print("fertig:", ziel)
+        return
 
     laeuft, auskunft = erreichbar(a.server)
     if not laeuft:

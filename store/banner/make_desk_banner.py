@@ -537,7 +537,8 @@ def tisch_decken(zufall, projekt, ki=None):
 
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
            akzent=None, logo_art="auto", uhr_name="pebble_time_2",
-           logo_farbe="auto", ki_nutzen=True, uhr_farben="auto"):
+           logo_farbe="auto", ki_nutzen=True, uhr_farben="auto",
+           nur_szene=False):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
@@ -612,14 +613,14 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
 {tisch}
 
 <!-- Pebble: liegt obenauf, Armbaender laufen aus dem Bild -->
-<g transform="translate({uhr_x:.0f},{uhr_y:.0f}) rotate({uhr_dreh})" filter="url(#schatten_gross)">
+{'' if nur_szene else f'''<g transform="translate({uhr_x:.0f},{uhr_y:.0f}) rotate({uhr_dreh})" filter="url(#schatten_gross)">
   <image href="{uhr_uri}" x="{-uhr_b/2:.1f}" y="{-uhr_h/2:.1f}" width="{uhr_b}" height="{uhr_h}"/>
-</g>
+</g>'''}
 
 <!-- Licht und Titel zuletzt -->
 <rect width="{W}" height="{H}" fill="url(#lichtkegel)" style="mix-blend-mode:soft-light"/>
 <rect width="{W}" height="{H}" fill="url(#lichtkegel)" opacity="0.55"/>
-{titelblock(titel, unterzeile, akzent, plattform)}
+{'' if nur_szene else titelblock(titel, unterzeile, akzent, plattform)}
 </svg>
 """
 
@@ -642,6 +643,9 @@ def main():
     p.add_argument("--uhr-band", default=None,
                    help="band_schwarz, band_rot, band_blau, band_weiss, "
                         "band_orange, band_gruen, band_grau, band_sand, band_leder")
+    p.add_argument("--nur-szene", action="store_true",
+                   help="ohne Uhr und Titel - Vorlage fuer den Durchlauf "
+                        "durch das Bildmodell")
     p.add_argument("--gezeichnet", action="store_true",
                    help="KI-Assets ignorieren und alles zeichnen")
     p.add_argument("--akzent", default=None)
@@ -662,7 +666,8 @@ def main():
         farben = (a.uhr_gehaeuse or vorgabe[0], a.uhr_band or vorgabe[1])
     svg = banner(a.projekt, a.shot, a.titel, a.unterzeile, a.plattform, a.logo,
                  a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe,
-                 ki_nutzen=not a.gezeichnet, uhr_farben=farben)
+                 ki_nutzen=not a.gezeichnet, uhr_farben=farben,
+                 nur_szene=a.nur_szene)
     rendern(svg, a.out)
     print("geschrieben:", a.out)
 
