@@ -131,20 +131,23 @@ zusammen.
 
 ### Mit der eigenen ComfyUI (der Weg, der nichts kostet)
 
-`comfy_assets.py` spricht eine lokale ComfyUI ueber ihre API an. Es
-bringt keinen eigenen Workflow mit, sondern nimmt deinen: So ist es
-egal, welches Modell du faehrst.
-
-1. In ComfyUI den Workflow oeffnen, der bei dir laeuft (z. B. Z-Image),
-   einmal ein Bild erzeugen, damit er sicher funktioniert.
-2. **Workflow -> Export (API)** und die Datei als
-   `store/banner/workflow_api.json` ablegen.
-3. Laufen lassen:
+`comfy_assets.py` spricht eine lokale ComfyUI ueber ihre API an.
+`workflow_api.json` liegt fertig daneben: Z-Image-Turbo, aufgebaut nach
+der offiziellen Vorlage `image_z_image_turbo` aus der Comfy-Galerie -
+UNETLoader, CLIPLoader (qwen_3_4b, Typ lumina2), VAE, KSampler mit 8
+Schritten, cfg 1, res_multistep/simple. Also einfach:
 
 ```bash
 cd store/banner
 python3 comfy_assets.py --server 127.0.0.1:8188
 ```
+
+Heissen die Modelldateien bei dir anders (etwa die Int8-Variante), die
+drei Namen oben in `workflow_api.json` anpassen. Und wer lieber seinen
+eigenen Workflow fahren moechte: in ComfyUI **Workflow -> Export (API)**
+und die Datei als `workflow_api.json` ablegen - das Skript sucht darin
+selbst die Felder fuer Prompt, Groesse, Seed und Dateiname, egal welche
+Nodes darin stehen.
 
 Das Skript sucht im Workflow die Felder fuer Prompt, Bildgroesse, Seed
 und Dateinamen, setzt pro Asset neue Werte ein, holt das fertige Bild ab
