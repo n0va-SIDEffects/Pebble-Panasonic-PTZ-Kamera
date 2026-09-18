@@ -112,6 +112,8 @@ SCHRIFTEN = {
 
 # Akzentfarbe je Projekt: klar unterscheidbar, damit die Banner in der
 # Store-Liste nebeneinander nicht verschwimmen.
+_LAGE = {}
+
 LOGO_ARTEN = ["geraet", "sticker", "plakette", "kritzel", "stempel", "druck"]
 
 # Jede App bekommt ihre eigene Erscheinungsform des Logos - das Logo ist
@@ -538,7 +540,7 @@ def tisch_decken(zufall, projekt, ki=None):
 def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
            akzent=None, logo_art="auto", uhr_name="pebble_time_2",
            logo_farbe="auto", ki_nutzen=True, uhr_farben="auto",
-           nur_szene=False):
+           nur_szene=False, szene_datei=None):
     zufall = random.Random(seed)
     akzent = akzent or AKZENTE.get(projekt, "#35b6f0")
 
@@ -586,7 +588,20 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
         logo_im_geraet = logo_auf_geraet(logo_uri, scene.PROJEKT_LOGOPLATZ[projekt])
 
     ki = ki_manifest() if ki_nutzen else {}
+    logo_lage = None
     if projekt in ki:
+        if nur_szene and logo_im_geraet:
+            # Lage merken, damit das Logo spaeter an dieselbe Stelle kommt
+            eintrag = ki[projekt]
+            bild = Image.open(os.path.join(KI_ORDNER, eintrag.get("datei") or
+                                           eintrag["dateien"][0]))
+            b = eintrag.get("breite", 160)
+            h = b * bild.height / bild.width
+            platz = eintrag["logo"]
+            logo_lage = {"x": -b / 2 + platz["x"] * b, "y": -h / 2 + platz["y"] * h,
+                         "breite": platz["breite"] * b,
+                         "stil": platz.get("stil", "gravur_holz")}
+            logo_im_geraet = ""
         projekt_svg = ki_bild(ki[projekt], zufall=zufall,
                               logo_uri=logo_uri if logo_im_geraet else None)
         logo_im_geraet = ""
@@ -598,19 +613,38 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
 
     # Werkzeuge und Geraet nach Tiefe stapeln: manches liegt unter dem
     # Geraet, manches darueber - das macht den Tisch erst unaufgeraeumt.
+    szene_svg = ""
+    nachtraegliches_logo = ""
+    if szene_datei:
+        with open(szene_datei, "rb") as f:
+            szene_svg = (f'<image href="{data_uri(Image.open(szene_datei).convert("RGB"))}" '
+                         f'x="0" y="0" width="{W}" height="{H}"/>')
+        lage_datei = os.path.splitext(szene_datei)[0].replace("_veredelt", "") + ".json"
+        if os.path.exists(lage_datei):
+            with open(lage_datei, encoding="utf-8") as f:
+                lage = json.load(f)
+            if lage.get("logo"):
+                nachtraegliches_logo = (
+                    f'<g transform="translate({lage["px"]},{lage["py"]}) '
+                    f'rotate({lage["pd"]})">' +
+                    logo_auf_geraet(logo_uri, lage["logo"]) + '</g>')
+
     stapel = tisch_decken(zufall, projekt, ki)
     stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
                         f'rotate({pd:.1f})">{projekt_svg}</g>'))
     if logo_svg:
         stapel.append((0.22, logo_svg))
+    if nur_szene and logo_lage:
+        _LAGE.update({"px": round(px), "py": round(py), "pd": round(pd, 1),
+                      "logo": logo_lage, "projekt": projekt})
     stapel.sort(key=lambda e: e[0])
     tisch = "\n".join(svg for _, svg in stapel)
 
     return f"""
 <svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
 {scene.defs(schriften, akzent)}
-{ki_untergrund(ki["tisch"]) if "tisch" in ki else scene.untergrund() + scene.schneidematte(zufall)}
-{tisch}
+{szene_svg if szene_svg else (ki_untergrund(ki["tisch"]) if "tisch" in ki else scene.untergrund() + scene.schneidematte(zufall))}
+{'' if szene_svg else tisch}
 
 <!-- Pebble: liegt obenauf, Armbaender laufen aus dem Bild -->
 {'' if nur_szene else f'''<g transform="translate({uhr_x:.0f},{uhr_y:.0f}) rotate({uhr_dreh})" filter="url(#schatten_gross)">
@@ -620,6 +654,7 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
 <!-- Licht und Titel zuletzt -->
 <rect width="{W}" height="{H}" fill="url(#lichtkegel)" style="mix-blend-mode:soft-light"/>
 <rect width="{W}" height="{H}" fill="url(#lichtkegel)" opacity="0.55"/>
+{nachtraegliches_logo}
 {'' if nur_szene else titelblock(titel, unterzeile, akzent, plattform)}
 </svg>
 """
@@ -646,6 +681,8 @@ def main():
     p.add_argument("--nur-szene", action="store_true",
                    help="ohne Uhr und Titel - Vorlage fuer den Durchlauf "
                         "durch das Bildmodell")
+    p.add_argument("--szene", default=None,
+                   help="fertige (veredelte) Szene als Untergrund benutzen")
     p.add_argument("--gezeichnet", action="store_true",
                    help="KI-Assets ignorieren und alles zeichnen")
     p.add_argument("--akzent", default=None)
@@ -664,11 +701,17 @@ def main():
     if a.uhr_gehaeuse or a.uhr_band:
         vorgabe = UHR_JE_PROJEKT.get(a.projekt, ("schwarz", "band_schwarz"))
         farben = (a.uhr_gehaeuse or vorgabe[0], a.uhr_band or vorgabe[1])
+    global _LAGE
+    _LAGE = {}
     svg = banner(a.projekt, a.shot, a.titel, a.unterzeile, a.plattform, a.logo,
                  a.seed, a.akzent, a.logo_art, a.uhr, a.logo_farbe,
                  ki_nutzen=not a.gezeichnet, uhr_farben=farben,
-                 nur_szene=a.nur_szene)
+                 nur_szene=a.nur_szene, szene_datei=a.szene)
     rendern(svg, a.out)
+    if a.nur_szene and _LAGE:
+        with open(os.path.splitext(a.out)[0] + ".json", "w", encoding="utf-8") as f:
+            json.dump(_LAGE, f, indent=2)
+        print("Lage des Logos notiert:", os.path.splitext(a.out)[0] + ".json")
     print("geschrieben:", a.out)
 
 
