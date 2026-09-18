@@ -62,8 +62,8 @@ python3 make_desk_banner.py \
 | `--seed` | Anordnung der Werkzeuge; einfach durchprobieren |
 | `--logo-art` | `auto` (Voreinstellung, Logo am Geraet) oder `geraet`, `sticker`, `plakette`, `kritzel`, `stempel`, `druck` |
 | `--akzent` | Akzentfarbe ueberschreiben, z. B. `"#ff8a1e"` |
-| `--uhr` | `pebble_time_2` (Voreinstellung) oder `pebble_time_steel` |
-| `--plattform` | die kleine Zeile unter dem Titel |
+| `--uhr` | `pebble_time_2`, `pebble_time_steel`, `pebble_round_2_gold`, `pebble_round_2_schwarz` |
+| `--plattform` | die kleine Zeile unter dem Titel; leer heisst: aus der Uhr ableiten |
 
 Fertiges Banner vor dem Release an seinen Platz kopieren:
 
@@ -100,9 +100,25 @@ Smartwatch.
 | Gehaeuse | `schwarz`, `silber`, `graphit`, `gold` |
 | Baender | `band_schwarz`, `band_weiss`, `band_rot`, `band_blau`, `band_orange`, `band_gruen`, `band_grau`, `band_sand`, `band_leder` |
 
+Jede Uhr bringt in `uhren.json` ihre eigenen Bannermasse mit (Hoehe,
+Platz, Neigung) und den Namen fuer die Zeile unter dem Titel - eine
+Round 2 ist breiter als eine Time 2 und wuerde sonst rechts aus dem Bild
+laufen.
+
+Runde Uhren (Round 2, Time Round) tragen statt `display` eine
+`display_ellipse` mit Zentrum, Halbachsen und Winkel. Der Screenshot wird
+darauf gestaucht und mitgedreht, damit er der Perspektive der Aufnahme
+folgt statt wie ein Aufkleber auf dem Glas zu liegen.
+
 Eine weitere Uhr aufnehmen: freistellen, nach `assets/`, Eintrag in
-`assets/uhren.json`, und in `uhren.GEHAEUSE` die beiden Bildzeilen
-hinterlegen, zwischen denen das Gehaeuse sitzt.
+`assets/uhren.json` (Displayflaeche ausmessen, Bannermasse, `anzeige`,
+`quelle`), und fuer die Umfaerbung in `uhren.GEHAEUSE` die beiden
+Bildzeilen hinterlegen, zwischen denen das Gehaeuse sitzt.
+
+Die Aufnahme sollte frontal sein, mit gestreckten Baendern, diffusem
+Licht und dunklem Display - je schraeger das Foto, desto mehr sieht der
+eingesetzte Screenshot nach Aufkleber aus. Welche Uhr zu welcher
+SDK-Plattform gehoert, steht in `assets/uhren.json` unter `plattform`.
 
 ## Erzeugte Assets
 

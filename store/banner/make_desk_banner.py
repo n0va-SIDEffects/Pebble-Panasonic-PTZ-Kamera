@@ -23,7 +23,7 @@ import os
 import random
 import sys
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
@@ -136,29 +136,58 @@ UHR_KOMBIS = [
 def uhr_mit_screenshot(shot_pfad, name="pebble_time_2", hoehe=360,
                        gehaeuse="schwarz", band="band_schwarz"):
     """
-    Screenshot in die Displayflaeche der Aufnahme setzen - in der
-    gewuenschten Farbvariante. Die Form bleibt immer die echte Aufnahme,
-    nur Gehaeuse und Band werden umgerechnet.
+    Screenshot in die Displayflaeche der Aufnahme setzen - eckig wie bei
+    der Time 2, oder in die Ellipse einer runden Uhr. Die Form bleibt
+    immer die echte Aufnahme, umgerechnet wird hoechstens die Farbe.
     """
     with open(os.path.join(UHREN, "uhren.json"), encoding="utf-8") as f:
         meta = json.load(f)[name]
-    uhr = uhren.variante(name, gehaeuse, band)
-    x0, y0, x1, y1 = meta["display"]
-    dw, dh = x1 - x0 + 1, y1 - y0 + 1
 
-    shot = Image.open(shot_pfad).convert("RGBA")
-    innen = Image.new("RGBA", (dw, dh), (0, 0, 0, 255))
-    sh = shot.resize((dw, max(1, round(dw * shot.height / shot.width))), Image.LANCZOS)
-    if sh.height > dh:
-        rand = (sh.height - dh) // 2
-        sh = sh.crop((0, rand, sh.width, rand + dh))
-    innen.alpha_composite(sh, (0, (dh - sh.height) // 2))
+    if meta.get("rund"):
+        uhr = Image.open(os.path.join(UHREN, meta["datei"])).convert("RGBA")
+        uhr = _rundes_display(uhr, meta, Image.open(shot_pfad).convert("RGBA"))
+    else:
+        uhr = uhren.variante(name, gehaeuse, band)
+        x0, y0, x1, y1 = meta["display"]
+        dw, dh = x1 - x0 + 1, y1 - y0 + 1
+        shot = Image.open(shot_pfad).convert("RGBA")
+        innen = Image.new("RGBA", (dw, dh), (0, 0, 0, 255))
+        sh = shot.resize((dw, max(1, round(dw * shot.height / shot.width))), Image.LANCZOS)
+        if sh.height > dh:
+            rand = (sh.height - dh) // 2
+            sh = sh.crop((0, rand, sh.width, rand + dh))
+        innen.alpha_composite(sh, (0, (dh - sh.height) // 2))
+        maske = Image.new("L", (dw, dh), 0)
+        ImageDraw.Draw(maske).rounded_rectangle([0, 0, dw - 1, dh - 1], meta["eckradius"], fill=255)
+        uhr.paste(innen, (x0, y0), maske)
 
-    from PIL import ImageDraw
-    maske = Image.new("L", (dw, dh), 0)
-    ImageDraw.Draw(maske).rounded_rectangle([0, 0, dw - 1, dh - 1], meta["eckradius"], fill=255)
-    uhr.paste(innen, (x0, y0), maske)
     return uhr.resize((max(1, round(uhr.width * hoehe / uhr.height)), hoehe), Image.LANCZOS)
+
+
+def _rundes_display(uhr, meta, shot):
+    """
+    Screenshot in das runde Display einer Round 2 setzen. Die Aufnahme ist
+    schraeg, das runde Display erscheint also als gekippte Ellipse - der
+    Screenshot wird entsprechend gestaucht und mitgedreht, sonst klebt er
+    wie ein Aufkleber auf dem Glas.
+    """
+    e = meta["display_ellipse"]
+    seite = min(shot.size)
+    shot = shot.crop(((shot.width - seite) // 2, (shot.height - seite) // 2,
+                      (shot.width + seite) // 2, (shot.height + seite) // 2))
+
+    breite, hoehe = int(2 * e["b"]), int(2 * e["a"])
+    flaeche = Image.new("RGBA", (breite, hoehe), (0, 0, 0, 0))
+    flaeche.alpha_composite(shot.resize((breite, hoehe), Image.LANCZOS))
+    maske = Image.new("L", (breite, hoehe), 0)
+    ImageDraw.Draw(maske).ellipse([0, 0, breite - 1, hoehe - 1], fill=255)
+    flaeche.putalpha(maske)
+
+    gedreht = flaeche.rotate(e["winkel"] - 90, expand=True, resample=Image.BICUBIC)
+    uhr = uhr.copy()
+    uhr.alpha_composite(gedreht, (int(e["cx"] - gedreht.width / 2),
+                                  int(e["cy"] - gedreht.height / 2)))
+    return uhr
 
 
 def logo_freistellen(pfad):
@@ -485,12 +514,17 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
     if uhr_farben == "auto":
         uhr_farben = UHR_JE_PROJEKT.get(
             projekt, UHR_KOMBIS[sum(ord(c) for c in projekt) % len(UHR_KOMBIS)])
-    uhr = uhr_mit_screenshot(shot, uhr_name, 352, uhr_farben[0], uhr_farben[1])
+    with open(os.path.join(UHREN, "uhren.json"), encoding="utf-8") as f:
+        uhr_meta = json.load(f)[uhr_name]
+    masse = uhr_meta.get("banner", {"hoehe": 352, "x": 608, "y": 150, "dreh": 9})
+    uhr = uhr_mit_screenshot(shot, uhr_name, masse["hoehe"], uhr_farben[0], uhr_farben[1])
     uhr_uri = data_uri(uhr)
     uhr_b, uhr_h = uhr.size
-    uhr_x = 608 + zufall.uniform(-6, 6)
-    uhr_y = 150 + zufall.uniform(-8, 8)
-    uhr_dreh = round(9 + zufall.uniform(-3.5, 3.5), 1)
+    uhr_x = masse["x"] + zufall.uniform(-6, 6)
+    uhr_y = masse["y"] + zufall.uniform(-8, 8)
+    uhr_dreh = round(masse["dreh"] + zufall.uniform(-3.5, 3.5), 1)
+    if not plattform:
+        plattform = uhr_meta.get("anzeige", "PEBBLE") + "  \u00b7  WATCHAPP"
 
     logo_bild = logo_freistellen(logo_pfad)
     if logo_farbe == "auto":
@@ -565,7 +599,8 @@ def main():
     p.add_argument("--shot", required=True)
     p.add_argument("--titel", required=True)
     p.add_argument("--unterzeile", default="")
-    p.add_argument("--plattform", default="PEBBLE TIME 2  ·  WATCHAPP")
+    p.add_argument("--plattform", default="",
+                   help="Zeile unter dem Titel; leer heisst: aus der Uhr ableiten")
     p.add_argument("--logo", default=os.path.join(HIER, "assets/side_effects_logo.png"))
     p.add_argument("--logo-art", default="auto",
                    choices=["auto"] + LOGO_ARTEN)

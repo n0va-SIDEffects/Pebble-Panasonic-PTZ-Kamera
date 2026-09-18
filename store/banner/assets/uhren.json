@@ -1,19 +1,105 @@
 {
-  "_hinweis": "Freigestellte Uhren fuer das Banner. 'display' ist die aktive Bildschirmflaeche in Pixeln der jeweiligen Datei: links, oben, rechts, unten. Dort hinein gehoert der Screenshot (siehe scripts/make_banner.py).",
+  "_hinweis": "Freigestellte Uhren fuer das Banner. Bei eckigen Uhren gibt 'display' die Bildschirmflaeche als links, oben, rechts, unten an; bei runden Uhren steht in 'display_ellipse' Zentrum, Halbachsen und Winkel der Displayflaeche. 'quelle' haelt fest, woher die Aufnahme stammt.",
   "pebble_time_2": {
     "datei": "pebble_time_2.png",
-    "groesse": [534, 1009],
-    "display": [97, 302, 436, 704],
+    "groesse": [
+      534,
+      1009
+    ],
+    "display": [
+      97,
+      302,
+      436,
+      704
+    ],
     "eckradius": 26,
     "gehaeuse": "schwarz",
-    "hinweis": "Schwarze Uhr - auf dunklem Grund einen weichen hellen Schein dahinterlegen, sonst verschwindet sie. Display automatisch nicht auffindbar (Gehaeuse und Display gleich dunkel), Werte von Hand ausgemessen."
+    "hinweis": "Schwarze Uhr - auf dunklem Grund einen weichen hellen Schein dahinterlegen, sonst verschwindet sie. Display automatisch nicht auffindbar (Gehaeuse und Display gleich dunkel), Werte von Hand ausgemessen.",
+    "quelle": "eigene Aufnahme",
+    "banner": {
+      "hoehe": 352,
+      "x": 608,
+      "y": 150,
+      "dreh": 9
+    },
+    "anzeige": "PEBBLE TIME 2",
+    "plattform": "emery"
   },
   "pebble_time_steel": {
     "datei": "pebble_time_steel.png",
-    "groesse": [336, 581],
-    "display": [34, 138, 299, 449],
+    "groesse": [
+      336,
+      581
+    ],
+    "display": [
+      34,
+      138,
+      299,
+      449
+    ],
     "eckradius": 20,
     "gehaeuse": "grau",
-    "hinweis": "Heller Metallrahmen - hier findet freistellen.py die Displayflaeche von allein."
+    "hinweis": "Heller Metallrahmen - hier findet freistellen.py die Displayflaeche von allein.",
+    "quelle": "eigene Aufnahme",
+    "banner": {
+      "hoehe": 330,
+      "x": 606,
+      "y": 152,
+      "dreh": 9
+    },
+    "anzeige": "PEBBLE TIME STEEL",
+    "plattform": "basalt"
+  },
+  "pebble_round_2_gold": {
+    "datei": "pebble_round_2_gold.png",
+    "groesse": [
+      912,
+      1200
+    ],
+    "display_ellipse": {
+      "cx": 256.6,
+      "cy": 497.1,
+      "a": 356.8,
+      "b": 238.3,
+      "winkel": 100.3
+    },
+    "rund": true,
+    "gehaeuse": "rosegold",
+    "quelle": "Produktfoto Core Devices, repebble.com (pr2-carousel-5.png)",
+    "hinweis": "Perspektivisch von links aufgenommen; das runde Display erscheint als Ellipse.",
+    "banner": {
+      "hoehe": 306,
+      "x": 596,
+      "y": 156,
+      "dreh": 4
+    },
+    "anzeige": "PEBBLE ROUND 2",
+    "plattform": "gabbro"
+  },
+  "pebble_round_2_schwarz": {
+    "datei": "pebble_round_2_schwarz.png",
+    "groesse": [
+      1035,
+      1200
+    ],
+    "display_ellipse": {
+      "cx": 265.9,
+      "cy": 500.8,
+      "a": 303.9,
+      "b": 211.0,
+      "winkel": 97.0
+    },
+    "rund": true,
+    "gehaeuse": "schwarz",
+    "quelle": "Produktfoto Core Devices, repebble.com (pr2-carousel-3.png)",
+    "hinweis": "Mattschwarz: Gehaeuse und Display sind gleich dunkel, die Ellipse wurde von Hand gesetzt.",
+    "banner": {
+      "hoehe": 300,
+      "x": 584,
+      "y": 158,
+      "dreh": 4
+    },
+    "anzeige": "PEBBLE ROUND 2",
+    "plattform": "gabbro"
   }
 }
