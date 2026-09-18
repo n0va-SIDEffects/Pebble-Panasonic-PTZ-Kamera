@@ -122,17 +122,51 @@ SDK-Plattform gehoert, steht in `assets/uhren.json` unter `plattform`.
 
 ## Erzeugte Assets
 
-`ki_assets.py` erzeugt Bildteile mit einem Modell auf Hugging Face
-(Tisch, Werkzeuge) und stellt sie frei. Was in `ki/manifest.json` steht
-und als Datei vorliegt, benutzt das Banner automatisch; `--gezeichnet`
-ignoriert alles davon. Der gemeinsame Stilbaustein `STIL` steckt in jedem
-Prompt - ohne ihn passen die Teile nicht zusammen.
+Tisch, Werkzeuge und Kleinteile kommen aus einem Bildmodell. Was in
+`ki/manifest.json` steht und als Datei vorliegt, benutzt das Banner
+automatisch; `--gezeichnet` ignoriert alles davon und zeichnet wie
+frueher. Der gemeinsame Stilbaustein steht in `assets_liste.json` unter
+`stil` und steckt in jedem Prompt - ohne ihn passen die Teile nicht
+zusammen.
 
-Dafuer wird ein Hugging-Face-Token gebraucht (Typ Read,
+### Mit der eigenen ComfyUI (der Weg, der nichts kostet)
+
+`comfy_assets.py` spricht eine lokale ComfyUI ueber ihre API an. Es
+bringt keinen eigenen Workflow mit, sondern nimmt deinen: So ist es
+egal, welches Modell du faehrst.
+
+1. In ComfyUI den Workflow oeffnen, der bei dir laeuft (z. B. Z-Image),
+   einmal ein Bild erzeugen, damit er sicher funktioniert.
+2. **Workflow -> Export (API)** und die Datei als
+   `store/banner/workflow_api.json` ablegen.
+3. Laufen lassen:
+
+```bash
+cd store/banner
+python3 comfy_assets.py --server 127.0.0.1:8188
+```
+
+Das Skript sucht im Workflow die Felder fuer Prompt, Bildgroesse, Seed
+und Dateinamen, setzt pro Asset neue Werte ein, holt das fertige Bild ab
+und stellt es frei. Ergebnisse landen in `ki/` als `roh_<name>.png` und
+`a_<name>.png`. Was schon freigestellt vorliegt, wird uebersprungen;
+`--neu` erzwingt einen neuen Durchgang, `--nur messer,pinzette` nimmt
+einzelne Stuecke.
+
+Helle Objekte bekommen in `assets_liste.json` `"hintergrund": "gruen"` -
+vor Weiss laesst sich eine weisse Kamera nicht freistellen.
+
+Was erzeugt wird, steht in `assets_liste.json`. Ein neues Stueck ist ein
+Eintrag mehr: `was` beschreibt das Objekt, `seed` haelt es
+reproduzierbar, `liegend: false` stellt es auf statt es hinzulegen.
+
+### Ueber Hugging Face
+
+`ki_assets.py` macht dasselbe mit Spaces auf Hugging Face, falls keine
+ComfyUI zur Hand ist. Dafuer wird ein Token gebraucht (Typ Read,
 huggingface.co/settings/tokens): entweder in `HF_TOKEN` oder als Datei
-`store/banner/hf_token`. Die Datei steht in `.gitignore` und gehoert
-nicht ins Repo. Die kostenlose GPU-Quota reicht fuer wenige Bilder pro
-Tag; groessere Saetze entstehen in mehreren Durchgaengen.
+`store/banner/hf_token`. Die Datei steht in `.gitignore`. Die kostenlose
+GPU-Quota reicht fuer wenige Bilder pro Tag.
 
 ## Voraussetzungen
 
@@ -147,7 +181,9 @@ make_desk_banner.py   Zusammenbau, Plaetze, Titel, Logo-Formen, Kommandozeile
 scene.py              Tisch, Matte, Werkzeuge, Kleinkram, Projektgeraete
 render.py             SVG -> PNG ueber den Browser, 2-fach ueberabgetastet
 uhren.py              Farbvarianten der Pebble aus den echten Aufnahmen
-ki_assets.py          Bildteile erzeugen und freistellen (Hugging Face)
+comfy_assets.py       Bildteile mit der eigenen ComfyUI erzeugen
+ki_assets.py          dasselbe ueber Hugging Face, wenn keine ComfyUI da ist
+assets_liste.json     was erzeugt wird: Stil, Prompts, Groessen, Seeds
 assets/               freigestellte Uhraufnahmen, uhren.json, Logo
 ki/                   erzeugte Assets und ihr manifest.json
 fonts/                eingebettete Schriften (siehe SCHRIFTEN.md)

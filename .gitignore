@@ -6,3 +6,4 @@ test/ergebnis.raw
 store/release/*.zip
 store/banner/__pycache__/
 store/banner/hf_token
+store/banner/roh_*.png

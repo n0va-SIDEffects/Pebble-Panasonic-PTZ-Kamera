@@ -1,0 +1,46 @@
+{
+  "_hinweis": "Bauplan fuer die Banner-Assets. 'stil' steht in jedem Prompt und haelt die Teile zusammen; 'lage' kommt bei liegenden Werkzeugen dazu, 'stehend' bei Geraeten. Helle Objekte bekommen einen gruenen Hintergrund, sonst frisst das Freistellen sie mit.",
+
+  "stil": "flat vector illustration, bold clean dark outlines, limited muted color palette, soft cel shading, simple shapes, technical illustration, no text, no letters, no labels, no brand names, no watermark",
+
+  "lage": "viewed from directly above, top-down flat lay, lying horizontally with the tip pointing right, centered, full object visible, no shadow, plain pure white background",
+
+  "stehend": "three quarter view slightly from above, standing upright, centered, full object visible, no shadow, plain pure white background",
+
+  "assets": {
+    "tisch": {
+      "was": "top-down view of an electronics workbench: dark walnut wooden tabletop with visible plank seams, a large dark green self-healing cutting mat with a fine grid and a measurement scale lying slightly askew on it, worn surface with faint scalpel cuts, empty, soft light from the upper left",
+      "breite": 1152, "hoehe": 512, "seed": 4, "freigestellt": false
+    },
+
+    "messer": {"was": "a yellow and black utility knife, box cutter, with an extended silver snap-off blade", "seed": 11},
+    "dreher_rot": {"was": "a small precision screwdriver with a red ribbed plastic handle, chrome shaft and a flat tip", "seed": 12},
+    "dreher_blau": {"was": "a small precision screwdriver with a blue ribbed plastic handle, chrome shaft and a phillips tip", "seed": 13},
+    "loetkolben": {"was": "a soldering iron with a blue handle, chrome shaft and copper tip, a black power cable curling away to the left", "seed": 14},
+    "pinzette": {"was": "a pair of thin stainless steel tweezers with pointed tips", "seed": 15},
+    "seitenschneider": {"was": "a pair of side cutting pliers with red rubber grips", "seed": 16},
+    "entloetpumpe": {"was": "a desoldering pump, dark grey plastic cylinder with a white plunger and a white nozzle", "seed": 17, "hintergrund": "gruen"},
+    "bleistift": {"was": "a yellow hexagonal pencil, sharpened, with a pink eraser", "seed": 18},
+    "messkabel": {"was": "a red test lead cable with two alligator clips, loosely curved", "seed": 19},
+
+    "loetzinn": {"was": "a spool of solder wire, dark plastic reel wound with shiny silver wire, a loose end sticking out", "breite": 640, "hoehe": 640, "seed": 21},
+    "schrauben": {"was": "a small scattered pile of steel screws and hex nuts", "breite": 640, "hoehe": 512, "seed": 22},
+    "widerstaende": {"was": "a few loose electronic resistors with colour code rings and bent wire legs", "breite": 640, "hoehe": 512, "seed": 23},
+    "kabelbinder": {"was": "a single coiled white cable tie", "breite": 640, "hoehe": 512, "seed": 24, "hintergrund": "gruen"},
+    "stiftleiste": {"was": "a short strip of gold pin header on a black plastic base", "breite": 640, "hoehe": 512, "seed": 25},
+    "kaffeetasse": {"was": "a white coffee mug seen from directly above, half full of dark coffee", "breite": 640, "hoehe": 640, "seed": 26, "hintergrund": "gruen"},
+
+    "theremin": {
+      "was": "a classic theremin musical instrument: dark wooden cabinet with a control panel and two knobs, a long thin vertical metal pitch antenna rising on the right side, a horizontal metal loop antenna on the left side",
+      "breite": 768, "hoehe": 768, "seed": 31, "liegend": false
+    },
+    "ptz": {
+      "was": "a white broadcast PTZ camera on a table mount, dome head with a large dark lens and a red tally light on top, one single piece with its base",
+      "breite": 768, "hoehe": 704, "seed": 32, "liegend": false, "hintergrund": "gruen"
+    },
+    "helo": {
+      "was": "a half rack width video streaming recorder: dark metal front panel with a small green status display, audio level meters, a round record button and a play button, rack ears on both sides",
+      "breite": 896, "hoehe": 512, "seed": 33, "liegend": false
+    }
+  }
+}
