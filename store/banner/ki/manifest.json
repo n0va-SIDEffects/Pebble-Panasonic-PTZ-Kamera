@@ -59,11 +59,11 @@
   "theremin": {
     "datei": "a_theremin.png",
     "typ": "projekt",
-    "breite": 214,
+    "breite": 262,
     "logo": {
-      "x": 0.08,
-      "y": 0.7,
-      "breite": 0.3,
+      "x": 0.42,
+      "y": 0.72,
+      "breite": 0.24,
       "stil": "gravur_holz"
     }
   },
