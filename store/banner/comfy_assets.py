@@ -245,8 +245,13 @@ def main():
         if not laeuft:
             raise SystemExit(f"ComfyUI auf {a.server} nicht erreichbar: {auskunft}")
         ziel = os.path.splitext(a.veredeln)[0] + "_veredelt.png"
-        with open(a.liste, encoding="utf-8") as f:
-            stil = json.load(f)["stil"]
+        # Der Stilbaustein kommt aus der Liste, wenn sie dabeiliegt -
+        # zum Veredeln allein wird sie aber nicht gebraucht.
+        stil = ("flat vector illustration, bold clean dark outlines, limited muted color "
+                "palette, soft cel shading, no text")
+        if os.path.exists(a.liste):
+            with open(a.liste, encoding="utf-8") as f:
+                stil = json.load(f).get("stil", stil)
         veredeln(a.server, a.veredeln, a.img2img, ziel, a.staerke,
                  stil + ". top-down view of an electronics workbench with tools on a green "
                         "cutting mat, even light, consistent perspective",
