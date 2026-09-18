@@ -2,10 +2,10 @@
   "_hinweis": "Bauplan fuer die Banner-Assets. 'stil' steht in jedem Prompt und haelt die Teile zusammen; 'lage' kommt bei liegenden Werkzeugen dazu, 'stehend' bei Geraeten. Helle Objekte bekommen einen gruenen Hintergrund, sonst frisst das Freistellen sie mit.",
   "stil": "flat vector illustration, bold clean dark outlines, limited muted color palette, soft cel shading, simple shapes, technical illustration, no text, no letters, no labels, no brand names, no watermark",
   "lage": "viewed from directly above, top-down flat lay, lying horizontally with the tip pointing right, centered, full object visible, no shadow, plain pure white background",
-  "stehend": "three quarter view slightly from above, standing upright, centered, full object visible, no shadow, plain pure white background",
+  "stehend": "seen from above at a thirty degree angle, standing on a surface, centered, full object visible, no shadow, plain pure white background",
   "assets": {
     "tisch": {
-      "was": "top-down view of an electronics workbench: dark walnut wooden tabletop with visible plank seams, a large dark green self-healing cutting mat with a fine grid and a measurement scale lying slightly askew on it, worn surface with faint scalpel cuts, empty, soft light from the upper left",
+      "was": "seen straight from directly above, perfectly top-down, camera pointing straight down: a dark green self-healing cutting mat with a fine grid and a measurement scale, worn surface with faint scalpel cuts, filling almost the whole frame and running off the right and bottom edges, dark walnut wooden workbench planks visible only along the top and left edge, no table legs, no room, no horizon, no perspective, flat overhead view, soft even light",
       "breite": 1152,
       "hoehe": 512,
       "seed": 4,
@@ -72,13 +72,6 @@
       "hoehe": 512,
       "seed": 25
     },
-    "kaffeetasse": {
-      "was": "a white coffee mug seen from directly above, half full of dark coffee",
-      "breite": 640,
-      "hoehe": 640,
-      "seed": 26,
-      "hintergrund": "gruen"
-    },
     "theremin": {
       "was": "a classic theremin musical instrument: dark wooden cabinet with a control panel and two knobs, a long thin vertical metal pitch antenna rising on the right side, a horizontal metal loop antenna on the left side",
       "breite": 768,
@@ -106,6 +99,42 @@
       "breite": 640,
       "hoehe": 640,
       "seed": 27
+    },
+    "kaffee_voll": {
+      "was": "a white coffee mug seen from directly above, filled to the brim with dark coffee",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 40
+    },
+    "kaffee_halb": {
+      "was": "a white coffee mug seen from directly above, half empty, a ring of dried coffee inside",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 41
+    },
+    "kaffee_leer": {
+      "was": "an empty white coffee mug seen from directly above, only a dark dried ring left at the bottom",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 42
+    },
+    "aschenbecher": {
+      "was": "a glass ashtray seen from directly above, overflowing with cigarette butts and ash",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 43
+    },
+    "papierkugel": {
+      "was": "a crumpled ball of white paper",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 44
+    },
+    "keks": {
+      "was": "a round biscuit with a bite taken out of it, a few crumbs beside it",
+      "breite": 640,
+      "hoehe": 640,
+      "seed": 45
     }
   }
 }

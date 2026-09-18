@@ -1,5 +1,5 @@
 {
-  "_hinweis": "KI-erzeugte Assets. 'breite' ist die Zielbreite in Bannereinheiten (720 x 320). 'dreh' richtet das Asset entlang +x aus wie die gezeichneten Werkzeuge. Geraete kommen erst wieder hinein, wenn sie das echte Vorbild treffen.",
+  "_hinweis": "KI-Assets. 'breite' ist die Zielbreite in Bannereinheiten (720 x 320), 'dreh' richtet ein Werkzeug entlang +x aus. Ein Eintrag mit 'dateien' statt 'datei' hat mehrere Fassungen - der Seed waehlt eine davon.",
   "tisch": {
     "datei": "z_tisch.png",
     "zoom": 1.3,
@@ -56,11 +56,6 @@
     "typ": "kram",
     "breite": 62
   },
-  "kaffeetasse": {
-    "datei": "a_kaffeetasse.png",
-    "typ": "kram",
-    "breite": 56
-  },
   "theremin": {
     "datei": "a_theremin.png",
     "typ": "projekt",
@@ -93,5 +88,18 @@
       "breite": 0.28,
       "stil": "aetzung_hell"
     }
+  },
+  "gimmick": {
+    "dateien": [
+      "a_kaffee_voll.png",
+      "a_kaffee_halb.png",
+      "a_kaffee_leer.png",
+      "a_aschenbecher.png",
+      "a_papierkugel.png",
+      "a_keks.png",
+      "a_kaffeetasse.png"
+    ],
+    "typ": "kram",
+    "breite": 58
   }
 }

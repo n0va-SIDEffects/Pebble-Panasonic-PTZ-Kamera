@@ -46,17 +46,36 @@ def ki_manifest():
         return {}
     with open(pfad, encoding="utf-8") as f:
         eintraege = json.load(f)
-    return {k: v for k, v in eintraege.items()
-            if not k.startswith("_") and os.path.exists(os.path.join(KI_ORDNER, v["datei"]))}
+    fertig = {}
+    for name, eintrag in eintraege.items():
+        if name.startswith("_"):
+            continue
+        if "dateien" in eintrag:
+            da = [d for d in eintrag["dateien"]
+                  if os.path.exists(os.path.join(KI_ORDNER, d))]
+            if da:
+                fertig[name] = dict(eintrag, dateien=da)
+        elif os.path.exists(os.path.join(KI_ORDNER, eintrag["datei"])):
+            fertig[name] = eintrag
+    return fertig
 
 
-def ki_bild(eintrag, breite=None, dreh=0, logo_uri=None):
+def ki_bild(eintrag, breite=None, dreh=0, logo_uri=None, zufall=None):
     """
     Ein KI-Asset als SVG-Gruppe, um die eigene Mitte gelegt - genau wie
     die gezeichneten Werkzeuge, damit beide durch dieselben Plaetze
     laufen. Traegt das Asset ein Logo, kommt es gleich mit hinein.
+
+    Stehen unter "dateien" mehrere Fassungen (die volle Tasse, die halbe,
+    die leere, der ueberquellende Aschenbecher), waehlt der Seed eine aus
+    - dieselbe Stelle im Bild, jedes Mal ein anderes Detail.
     """
-    bild = Image.open(os.path.join(KI_ORDNER, eintrag["datei"])).convert("RGBA")
+    dateien = eintrag.get("dateien")
+    if dateien:
+        datei = (zufall or random).choice(dateien)
+    else:
+        datei = eintrag["datei"]
+    bild = Image.open(os.path.join(KI_ORDNER, datei)).convert("RGBA")
     b = breite or eintrag.get("breite", 160)
     h = b * bild.height / bild.width
     dreh = eintrag.get("dreh", 0) + dreh
@@ -499,7 +518,8 @@ def tisch_decken(zufall, projekt, ki=None):
         art = ki[name]["typ"] if name in ki else vorrat[name][0]
         if not frei[art]:
             continue
-        stueck = ki_bild(ki[name]) if name in ki else vorrat[name][1](zufall)
+        stueck = (ki_bild(ki[name], zufall=zufall) if name in ki
+                  else vorrat[name][1](zufall))
         if hinlegen(art, stueck, zufall.uniform(0.2, 0.9)):
             offen -= 1
 
@@ -508,7 +528,8 @@ def tisch_decken(zufall, projekt, ki=None):
     kram += [n for n, e in ki.items() if e.get("typ") == "kram" and n not in vorrat]
     zufall.shuffle(kram)
     for name in kram[:zufall.randint(2, 3)]:
-        stueck = ki_bild(ki[name]) if name in ki else vorrat[name][1](zufall)
+        stueck = (ki_bild(ki[name], zufall=zufall) if name in ki
+                  else vorrat[name][1](zufall))
         hinlegen("kram", stueck, zufall.uniform(0.05, 0.18), flip="nie")
 
     return gelegt
@@ -565,7 +586,8 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
 
     ki = ki_manifest() if ki_nutzen else {}
     if projekt in ki:
-        projekt_svg = ki_bild(ki[projekt], logo_uri=logo_uri if logo_im_geraet else None)
+        projekt_svg = ki_bild(ki[projekt], zufall=zufall,
+                              logo_uri=logo_uri if logo_im_geraet else None)
         logo_im_geraet = ""
     else:
         projekt_svg = scene.PROJEKTE[projekt](akzent, logo_im_geraet)
