@@ -1,15 +1,97 @@
 {
   "_hinweis": "KI-erzeugte Assets. 'breite' ist die Zielbreite in Bannereinheiten (720 x 320). 'dreh' richtet das Asset entlang +x aus wie die gezeichneten Werkzeuge. Geraete kommen erst wieder hinein, wenn sie das echte Vorbild treffen.",
   "tisch": {
-    "datei": "t_tisch.png",
-    "zoom": 1.46,
-    "x": -158,
+    "datei": "z_tisch.png",
+    "zoom": 1.3,
+    "x": -112,
     "y": -44
   },
   "loetkolben": {
-    "datei": "f_loetkolben.png",
+    "datei": "a_loetkolben.png",
     "typ": "lang",
-    "breite": 176,
-    "dreh": 180
+    "breite": 174
+  },
+  "messer": {
+    "datei": "a_messer.png",
+    "typ": "lang",
+    "breite": 146
+  },
+  "dreher_rot": {
+    "datei": "a_dreher_rot.png",
+    "typ": "kurz",
+    "breite": 122
+  },
+  "seitenschneider": {
+    "datei": "a_seitenschneider.png",
+    "typ": "kurz",
+    "breite": 118
+  },
+  "pinzette": {
+    "datei": "a_pinzette.png",
+    "typ": "kurz",
+    "breite": 106
+  },
+  "entloetpumpe": {
+    "datei": "a_entloetpumpe.png",
+    "typ": "kurz",
+    "breite": 128
+  },
+  "bleistift": {
+    "datei": "a_bleistift.png",
+    "typ": "kurz",
+    "breite": 116
+  },
+  "krokokabel": {
+    "datei": "a_messkabel.png",
+    "typ": "kurz",
+    "breite": 138
+  },
+  "loetzinn": {
+    "datei": "a_loetzinn.png",
+    "typ": "kram",
+    "breite": 58
+  },
+  "stiftleiste": {
+    "datei": "a_stiftleiste.png",
+    "typ": "kram",
+    "breite": 62
+  },
+  "kaffeetasse": {
+    "datei": "a_kaffeetasse.png",
+    "typ": "kram",
+    "breite": 56
+  },
+  "theremin": {
+    "datei": "a_theremin.png",
+    "typ": "projekt",
+    "breite": 236,
+    "logo": {
+      "x": 0.08,
+      "y": 0.7,
+      "breite": 0.3,
+      "stil": "gravur_holz"
+    }
+  },
+  "ptz": {
+    "datei": "a_ptz.png",
+    "typ": "projekt",
+    "breite": 152,
+    "logo": {
+      "x": 0.26,
+      "y": 0.79,
+      "breite": 0.42,
+      "stil": "druck_dunkel"
+    }
+  },
+  "helo": {
+    "datei": "a_helo.png",
+    "typ": "projekt",
+    "breite": 226,
+    "logo": {
+      "x": 0.52,
+      "y": 0.6,
+      "breite": 0.28,
+      "stil": "aetzung_hell"
+    }
   }
 }

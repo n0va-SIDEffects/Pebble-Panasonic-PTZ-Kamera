@@ -486,21 +486,30 @@ def tisch_decken(zufall, projekt, ki=None):
                               112 + zufall.uniform(-8, 10)), zufall.uniform(0.2, 0.9))
 
     # Gaeste aus dem Vorrat
+    # Gaeste: erst schauen, ob es das Stueck als Asset gibt
+    fest = {"messer", "loetkolben", "dreher_rot", "dreher_blau"}
     gross = [n for n, (art, _) in vorrat.items() if art in ("lang", "kurz")]
+    gross += [n for n, e in ki.items()
+              if e.get("typ") in ("lang", "kurz") and n not in fest and n not in vorrat]
     zufall.shuffle(gross)
     offen = zufall.randint(1, 2)
     for name in gross:
         if offen <= 0:
             break
-        art, zeichnen = vorrat[name]
-        if frei[art] and hinlegen(art, zeichnen(zufall), zufall.uniform(0.2, 0.9)):
+        art = ki[name]["typ"] if name in ki else vorrat[name][0]
+        if not frei[art]:
+            continue
+        stueck = ki_bild(ki[name]) if name in ki else vorrat[name][1](zufall)
+        if hinlegen(art, stueck, zufall.uniform(0.2, 0.9)):
             offen -= 1
 
     # Kleinteile
     kram = [n for n, (art, _) in vorrat.items() if art == "kram"]
+    kram += [n for n, e in ki.items() if e.get("typ") == "kram" and n not in vorrat]
     zufall.shuffle(kram)
     for name in kram[:zufall.randint(2, 3)]:
-        hinlegen("kram", vorrat[name][1](zufall), zufall.uniform(0.05, 0.18), flip="nie")
+        stueck = ki_bild(ki[name]) if name in ki else vorrat[name][1](zufall)
+        hinlegen("kram", stueck, zufall.uniform(0.05, 0.18), flip="nie")
 
     return gelegt
 
