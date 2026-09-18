@@ -73,10 +73,10 @@
       "seed": 25
     },
     "theremin": {
-      "was": "a classic theremin musical instrument: dark wooden cabinet with a control panel and two knobs, a long thin vertical metal pitch antenna rising on the right side, a horizontal metal loop antenna on the left side",
+      "was": "a classic theremin musical instrument on a table: a dark wooden box with a control panel and two round knobs, ONE long thin straight vertical metal rod antenna rising from the RIGHT end of the box, and ONE large closed horizontal metal loop antenna, shaped like a flat ring, sticking out sideways from the LEFT end of the box. Both antennas clearly visible, the loop antenna is essential",
       "breite": 768,
       "hoehe": 768,
-      "seed": 31,
+      "seed": 34,
       "liegend": false
     },
     "ptz": {

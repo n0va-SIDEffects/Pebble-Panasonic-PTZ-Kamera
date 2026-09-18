@@ -59,7 +59,7 @@
   "theremin": {
     "datei": "a_theremin.png",
     "typ": "projekt",
-    "breite": 236,
+    "breite": 214,
     "logo": {
       "x": 0.08,
       "y": 0.7,
@@ -70,7 +70,7 @@
   "ptz": {
     "datei": "a_ptz.png",
     "typ": "projekt",
-    "breite": 152,
+    "breite": 150,
     "logo": {
       "x": 0.26,
       "y": 0.79,
@@ -81,7 +81,7 @@
   "helo": {
     "datei": "a_helo.png",
     "typ": "projekt",
-    "breite": 226,
+    "breite": 228,
     "logo": {
       "x": 0.52,
       "y": 0.6,
@@ -96,10 +96,14 @@
       "a_kaffee_leer.png",
       "a_aschenbecher.png",
       "a_papierkugel.png",
-      "a_keks.png",
-      "a_kaffeetasse.png"
+      "a_keks.png"
     ],
     "typ": "kram",
     "breite": 58
+  },
+  "isolierband": {
+    "datei": "a_isolierband.png",
+    "typ": "kram",
+    "breite": 52
   }
 }
