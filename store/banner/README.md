@@ -18,6 +18,21 @@ dem gerade genau diese App entsteht.
 | Das Geraet der App | Bildmitte |
 | SIDE effect's Logo | auf dem Geraet selbst |
 
+## Nichts ueberlappt, das Geraet steht vorn
+
+Das Geraet der App bekommt die Bildmitte und liegt ganz oben - es ist
+das Thema, und es bleibt frei. Erst danach fallen die Werkzeuge, und
+jedes bekommt nur einen Platz, an dem es nichts beruehrt: nicht den
+Titel, nicht die Uhr, nicht das Geraet und kein anderes Werkzeug.
+Findet ein Stueck keinen freien Platz, bleibt es liegen - lieber ein
+Werkzeug weniger als zwei, die sich schneiden.
+
+Die Sperrflaeche eines Geraets wird dabei nicht als ein Klotz gerechnet,
+sondern in waagerechte Baender zerlegt (`silhouettenboxen`). Beim
+Theremin ragt eine duenne Antenne nach oben; als volle Box wuerde sie
+die halbe Bannerhoehe blockieren, Band fuer Band gemessen nur die paar
+Pixel, die sie wirklich einnimmt.
+
 ## Was sich je App aendert
 
 - **Das Geraet in der Bildmitte** - darum geht es.

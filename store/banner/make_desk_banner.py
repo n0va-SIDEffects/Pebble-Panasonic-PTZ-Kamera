@@ -465,31 +465,94 @@ def logo_auf_geraet(uri, platz):
 
 
 PLAETZE = [
-    ("oben", 426, 64, -17, 14, 10, "lang"),
-    ("unten", 300, 294, -5, 22, 8, "lang"),
-    ("links", 94, 206, -78, 10, 12, "kurz"),
-    ("linksoben", 106, 182, -58, 10, 14, "kurz"),
-    ("linksunten", 142, 292, 14, 16, 16, "kurz"),
-    ("rechts", 458, 210, 66, 12, 16, "kurz"),
-    ("kram_oben", 374, 120, 0, 18, 0, "kram"),
-    ("kram_untenrechts", 452, 290, 0, 12, 0, "kram"),
-    ("kram_untenlinks", 54, 292, 0, 10, 0, "kram"),
-    ("kram_links", 74, 244, 0, 10, 0, "kram"),
+    # name, x, y, Drehung, Streuung in x und y, Drehstreuung, Art.
+    # Grosszuegige Zonen statt enger Punkte: was wirklich passt,
+    # entscheidet ohnehin die Kollisionspruefung - sie braucht nur genug
+    # Vorschlaege. Die Mitte gehoert dem Geraet.
+    ("oben", 400, 58, -16, 46, 12, "lang"),
+    ("unten", 290, 292, -4, 60, 8, "lang"),
+    ("links", 62, 196, -80, 20, 14, "kurz"),
+    ("linksunten", 96, 286, 12, 34, 18, "kurz"),
+    ("rechts", 444, 206, 70, 22, 18, "kurz"),
+    ("rechtsoben", 428, 118, 34, 26, 24, "kurz"),
+    ("untenmitte", 340, 292, 8, 50, 14, "kurz"),
+    ("kram_untenrechts", 452, 290, 0, 26, 0, "kram"),
+    ("kram_links", 58, 250, 0, 22, 0, "kram"),
+    ("kram_oben", 372, 36, 0, 40, 0, "kram"),
+    ("kram_linksoben", 62, 142, 0, 22, 0, "kram"),
+    ("kram_untenlinks", 150, 294, 0, 40, 0, "kram"),
 ]
 
 
-def tisch_decken(zufall, projekt, ki=None):
-    """
-    Werkzeuge auf die Plaetze verteilen. Teppichmesser, Loetkolben und
-    zwei Feinschraubendreher sind immer dabei - sie tragen die Serie.
-    Dazu kommen ein bis zwei Stuecke aus dem Vorrat und zwei bis drei
-    Kleinteile, damit kein Tisch wie der vorige aussieht.
+def masse(eintrag, breite=None):
+    """Breite und Hoehe eines Assets in Bannereinheiten."""
+    b = breite or eintrag.get("breite", 160)
+    datei = eintrag.get("datei") or eintrag["dateien"][0]
+    bild = Image.open(os.path.join(KI_ORDNER, datei))
+    return b, b * bild.height / bild.width
 
-    Werkzeuge duerfen um 180 Grad gedreht liegen; beim Loetkolben ist das
-    keine Laune, sondern Pflicht: sein Kabel soll zum Bildrand laufen und
-    nicht quer ueber das Geraet.
+
+def silhouettenboxen(eintrag, x, y, breite=None, baender=7, luft=7):
+    """
+    Die Sperrflaeche eines Geraets, in waagerechte Baender zerlegt.
+
+    Eine einzelne Box um das ganze Asset waere zu grob: beim Theremin
+    ragt eine duenne Antenne nach oben, und die wuerde als Klotz die
+    halbe Bannerhoehe blockieren. Band fuer Band gemessen bleibt nur
+    gesperrt, wo wirklich etwas liegt.
+    """
+    import numpy as np
+    b = breite or eintrag.get("breite", 160)
+    datei = eintrag.get("datei") or eintrag["dateien"][0]
+    bild = Image.open(os.path.join(KI_ORDNER, datei)).convert("RGBA")
+    h = b * bild.height / bild.width
+    alpha = np.asarray(bild.getchannel("A")) > 30
+
+    boxen = []
+    hoch = max(1, alpha.shape[0] // baender)
+    for i in range(0, alpha.shape[0], hoch):
+        streifen = alpha[i:i + hoch]
+        spalten = np.nonzero(streifen.any(axis=0))[0]
+        if not len(spalten):
+            continue
+        links = spalten[0] / bild.width * b - b / 2
+        rechts = (spalten[-1] + 1) / bild.width * b - b / 2
+        oben = i / bild.height * h - h / 2
+        unten = min(i + hoch, alpha.shape[0]) / bild.height * h - h / 2
+        boxen.append((x + links - luft, y + oben - luft,
+                      x + rechts + luft, y + unten + luft))
+    return boxen
+
+
+def huellbox(x, y, dreh, b, h, luft=6):
+    """
+    Achsenparallele Huelle eines gedrehten Rechtecks. Bewusst grosszuegig:
+    lieber ein Platz zu viel verworfen als zwei Werkzeuge, die sich
+    beruehren.
+    """
+    bogen = math.radians(dreh)
+    c, s = abs(math.cos(bogen)), abs(math.sin(bogen))
+    bb = b * c + h * s + 2 * luft
+    hh = b * s + h * c + 2 * luft
+    return (x - bb / 2, y - hh / 2, x + bb / 2, y + hh / 2)
+
+
+def stossen(a, b):
+    """Ueberschneiden sich zwei Rechtecke?"""
+    return not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])
+
+
+def tisch_decken(zufall, projekt, ki=None, belegt=None):
+    """
+    Werkzeuge auf die Plaetze verteilen, ohne dass sich etwas beruehrt.
+
+    Jeder Kandidat bekommt seine Huellbox; stoesst sie an etwas schon
+    Liegendes - Titel, Uhr, das Geraet oder ein anderes Werkzeug - wird
+    der Platz verworfen und der naechste probiert. Lieber liegt ein
+    Werkzeug weniger auf dem Tisch, als dass sich zwei ueberlappen.
     """
     ki = ki or {}
+    belegt = list(belegt or [])
     vorrat = scene.werkzeug_vorrat()
     frei = {art: [p for p in PLAETZE if p[6] == art] for art in ("lang", "kurz", "kram")}
     for art in frei:
@@ -497,72 +560,77 @@ def tisch_decken(zufall, projekt, ki=None):
 
     gelegt = []
 
-    def hinlegen(art, zeichnung, tiefe, flip="zufall"):
-        """flip: 'zufall', 'nie' oder eine Liste von Plaetzen, die kippen."""
-        if not frei[art]:
-            return None
-        name, x, y, dreh, streu, drehstreu, _ = frei[art].pop()
-        x += zufall.uniform(-streu, streu)
-        y += zufall.uniform(-streu, streu)
-        dreh += zufall.uniform(-drehstreu, drehstreu)
-        if flip == "zufall":
-            gekippt = zufall.random() < 0.5
-        elif flip == "nie":
-            gekippt = False
-        else:
-            gekippt = name in flip
-        if gekippt:
-            dreh += 180
-        gelegt.append((tiefe, f'<g transform="translate({x:.0f},{y:.0f}) '
-                              f'rotate({dreh:.1f})">{zeichnung}</g>'))
-        return name
+    def hinlegen(art, name, groesse, zeichnung, tiefe, flip="zufall", versuche=16):
+        """Den ersten Platz nehmen, an dem das Stueck frei liegt."""
+        b, h = groesse
+        for platz in list(frei[art]):
+            _, px_, py_, dreh0, streu, drehstreu, _ = platz
+            for _ in range(versuche):
+                x = px_ + zufall.uniform(-streu, streu)
+                y = py_ + zufall.uniform(-streu, streu)
+                dreh = dreh0 + zufall.uniform(-drehstreu, drehstreu)
+                if flip == "zufall" and zufall.random() < 0.5:
+                    dreh += 180
+                elif isinstance(flip, (tuple, list)) and platz[0] in flip:
+                    dreh += 180
+                box = huellbox(x, y, dreh, b, h)
+                if box[0] < 2 or box[1] < 2 or box[2] > W - 2 or box[3] > H - 2:
+                    continue
+                if any(stossen(box, anderes) for anderes in belegt):
+                    continue
+                belegt.append(box)
+                frei[art].remove(platz)
+                gelegt.append((tiefe, f'<g transform="translate({x:.0f},{y:.0f}) '
+                                      f'rotate({dreh:.1f})">{zeichnung}</g>'))
+                return True
+        return False
 
-    def werkzeug(name, gezeichnet, groesse):
-        """KI-Asset, wenn eines vorliegt - sonst die Zeichnung."""
+    def stueck(name, ersatz_fn, breite):
+        """Asset, wenn vorhanden - sonst die Zeichnung."""
         if name in ki:
-            return ki_bild(ki[name], breite=groesse)
-        return gezeichnet
+            b, h = masse(ki[name], breite)
+            return (b, h), ki_bild(ki[name], breite=breite, zufall=zufall)
+        return (breite, breite * 0.32), ersatz_fn()
 
     # fester Bestand
-    hinlegen("lang", werkzeug("messer", scene.teppichmesser(136 + zufall.uniform(-8, 10)),
-                              136 + zufall.uniform(-8, 10)), zufall.uniform(0.55, 0.9))
-    hinlegen("lang", werkzeug("loetkolben", scene.loetkolben(178 + zufall.uniform(-10, 12)),
-                              176 + zufall.uniform(-10, 12)), zufall.uniform(0.55, 0.9),
-             flip=("oben",))
-    hinlegen("kurz", werkzeug("dreher_rot",
-                              scene.schraubendreher(120 + zufall.uniform(-8, 10), "griff_rot"),
-                              120 + zufall.uniform(-8, 10)), zufall.uniform(0.2, 0.9))
-    hinlegen("kurz", werkzeug("dreher_blau",
-                              scene.schraubendreher(112 + zufall.uniform(-8, 10), "griff_blau"),
-                              112 + zufall.uniform(-8, 10)), zufall.uniform(0.2, 0.9))
+    for name, ersatz, breite, art, flip in (
+            ("messer", lambda: scene.teppichmesser(132), 132, "lang", "zufall"),
+            ("loetkolben", lambda: scene.loetkolben(158), 158, "lang", ("oben",)),
+            ("dreher_rot", lambda: scene.schraubendreher(112, "griff_rot"), 112, "kurz", "zufall"),
+            ("dreher_blau", lambda: scene.schraubendreher(106, "griff_blau"), 106, "kurz", "zufall")):
+        groesse, svg = stueck(name, ersatz, breite)
+        hinlegen(art, name, groesse, svg, zufall.uniform(0.2, 0.9), flip=flip)
 
-    # Gaeste aus dem Vorrat
-    # Gaeste: erst schauen, ob es das Stueck als Asset gibt
+    # Gaeste
     fest = {"messer", "loetkolben", "dreher_rot", "dreher_blau"}
-    gross = [n for n, (art, _) in vorrat.items() if art in ("lang", "kurz")]
+    gross = [n for n, (a, _) in vorrat.items() if a in ("lang", "kurz")]
     gross += [n for n, e in ki.items()
               if e.get("typ") in ("lang", "kurz") and n not in fest and n not in vorrat]
     zufall.shuffle(gross)
-    offen = zufall.randint(1, 2)
+    offen = zufall.randint(2, 3)
     for name in gross:
         if offen <= 0:
             break
         art = ki[name]["typ"] if name in ki else vorrat[name][0]
-        if not frei[art]:
-            continue
-        stueck = (ki_bild(ki[name], zufall=zufall) if name in ki
-                  else vorrat[name][1](zufall))
-        if hinlegen(art, stueck, zufall.uniform(0.2, 0.9)):
+        if name in ki:
+            groesse = masse(ki[name])
+            svg = ki_bild(ki[name], zufall=zufall)
+        else:
+            groesse, svg = (110, 36), vorrat[name][1](zufall)
+        if hinlegen(art, name, groesse, svg, zufall.uniform(0.2, 0.9)):
             offen -= 1
 
     # Kleinteile
-    kram = [n for n, (art, _) in vorrat.items() if art == "kram"]
+    kram = [n for n, (a, _) in vorrat.items() if a == "kram"]
     kram += [n for n, e in ki.items() if e.get("typ") == "kram" and n not in vorrat]
     zufall.shuffle(kram)
-    for name in kram[:zufall.randint(2, 3)]:
-        stueck = (ki_bild(ki[name], zufall=zufall) if name in ki
-                  else vorrat[name][1](zufall))
-        hinlegen("kram", stueck, zufall.uniform(0.05, 0.18), flip="nie")
+    for name in kram[:zufall.randint(3, 5)]:
+        if name in ki:
+            groesse = masse(ki[name])
+            svg = ki_bild(ki[name], zufall=zufall)
+        else:
+            groesse, svg = (52, 52), vorrat[name][1](zufall)
+        hinlegen("kram", name, groesse, svg, zufall.uniform(0.05, 0.18), flip="nie")
 
     return gelegt
 
@@ -637,9 +705,9 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
         logo_im_geraet = ""
     else:
         projekt_svg = scene.PROJEKTE[projekt](akzent, logo_im_geraet)
-    px = 272 + zufall.uniform(-10, 10)
-    py = 196 + zufall.uniform(-8, 8)
-    pd = zufall.uniform(-4, 4)
+    px = 268 + zufall.uniform(-8, 8)
+    py = 190 + zufall.uniform(-6, 6)
+    pd = zufall.uniform(-3, 3)
 
     # Werkzeuge und Geraet nach Tiefe stapeln: manches liegt unter dem
     # Geraet, manches darueber - das macht den Tisch erst unaufgeraeumt.
@@ -664,7 +732,15 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
                     f'<g transform="translate({lage["px"]},{lage["py"]}) '
                     f'rotate({lage["pd"]})">{innen}</g>')
 
-    stapel = tisch_decken(zufall, projekt, ki)
+    # Sperrflaechen, bevor das erste Werkzeug faellt: Titel, Uhr und das
+    # Geraet. Das Thema der App gehoert in den Vordergrund und bleibt frei.
+    belegt = [(16, 4, 350, 134),
+              (uhr_x - uhr_b / 2 - 8, 0, W, H)]
+    if projekt in ki:
+        belegt += silhouettenboxen(ki[projekt], px, py)
+    else:
+        belegt.append(huellbox(px, py, pd, 240, 170, luft=10))
+    stapel = tisch_decken(zufall, projekt, ki, belegt)
     if not ohne_geraet:
         stapel.append((0.5, f'<g transform="translate({px:.0f},{py:.0f}) '
                             f'rotate({pd:.1f})">{projekt_svg}</g>'))

@@ -59,7 +59,7 @@
   "theremin": {
     "datei": "a_theremin.png",
     "typ": "projekt",
-    "breite": 262,
+    "breite": 250,
     "logo": {
       "x": 0.42,
       "y": 0.72,
@@ -70,7 +70,7 @@
   "ptz": {
     "datei": "a_ptz.png",
     "typ": "projekt",
-    "breite": 150,
+    "breite": 176,
     "logo": {
       "x": 0.26,
       "y": 0.79,
@@ -81,7 +81,7 @@
   "helo": {
     "datei": "a_helo.png",
     "typ": "projekt",
-    "breite": 228,
+    "breite": 252,
     "logo": {
       "x": 0.52,
       "y": 0.6,
