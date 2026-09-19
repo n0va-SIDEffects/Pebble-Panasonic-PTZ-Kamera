@@ -176,8 +176,17 @@ def veredeln(server, vorlage, workflow_pfad, ziel, staerke, prompt, seed):
 
     name = hochladen(server, vorlage)
     print("hochgeladen als:", name)
-    for knoten in workflow.values():
-        if "image" in knoten.get("inputs", {}) and knoten.get("class_type") == "LoadImage":
+    maske_pfad = os.path.splitext(vorlage)[0] + "_maske.png"
+    maske_name = None
+    if os.path.exists(maske_pfad):
+        maske_name = hochladen(server, maske_pfad)
+        print("Maske hochgeladen als:", maske_name)
+    lader = [(kid, k) for kid, k in workflow.items() if k.get("class_type") == "LoadImage"]
+    for kid, knoten in lader:
+        titel = (knoten.get("_meta", {}).get("title") or "").lower()
+        if maske_name and "maske" in titel:
+            knoten["inputs"]["image"] = maske_name
+        else:
             knoten["inputs"]["image"] = name
     for knoten_id, feld in _felder(workflow, "denoise"):
         workflow[knoten_id]["inputs"][feld] = staerke
@@ -237,7 +246,9 @@ def main():
                    help="eine fertige Szene noch einmal leicht durchs Modell schicken")
     p.add_argument("--staerke", type=float, default=0.35,
                    help="wie frei das Modell dabei sein darf (0.2 vorsichtig, 0.5 viel)")
-    p.add_argument("--img2img", default=os.path.join(HIER, "workflow_img2img.json"))
+    p.add_argument("--img2img", default=None,
+                   help="Workflow fuer den Durchlauf; ohne Angabe wird der mit Maske "
+                        "genommen, sobald eine Maske neben der Vorlage liegt")
     a = p.parse_args()
 
     if a.veredeln:
@@ -252,7 +263,14 @@ def main():
         if os.path.exists(a.liste):
             with open(a.liste, encoding="utf-8") as f:
                 stil = json.load(f).get("stil", stil)
-        veredeln(a.server, a.veredeln, a.img2img, ziel, a.staerke,
+        workflow_pfad = a.img2img
+        if not workflow_pfad:
+            mit_maske = os.path.join(HIER, "workflow_img2img_maske.json")
+            hat_maske = os.path.exists(os.path.splitext(a.veredeln)[0] + "_maske.png")
+            workflow_pfad = (mit_maske if hat_maske and os.path.exists(mit_maske)
+                             else os.path.join(HIER, "workflow_img2img.json"))
+            print("Workflow:", os.path.basename(workflow_pfad))
+        veredeln(a.server, a.veredeln, workflow_pfad, ziel, a.staerke,
                  stil + ". top-down view of an electronics workbench with tools on a green "
                         "cutting mat, even light, consistent perspective",
                  7)

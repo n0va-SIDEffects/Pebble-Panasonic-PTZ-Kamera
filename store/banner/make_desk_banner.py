@@ -235,6 +235,36 @@ def passende_groesse(text, schrift_pfad, hoechstbreite, start, kleinste):
     return groesse
 
 
+def geraetemaske(lage, rand=10):
+    """
+    Schwarze Silhouette des Geraets auf weissem Grund. ComfyUI veraendert
+    beim maskierten Durchlauf nur das Weisse - das Geraet bleibt damit
+    unangetastet, und an seiner Stelle entsteht auch kein Loch, das das
+    Modell nach eigenem Gutduenken fuellt.
+    """
+    from PIL import ImageFilter, ImageOps
+    ki = ki_manifest()
+    name = lage.get("projekt")
+    if name not in ki:
+        return None
+    eintrag = ki[name]
+    bild = Image.open(os.path.join(KI_ORDNER, eintrag.get("datei") or
+                                   eintrag["dateien"][0])).convert("RGBA")
+    b = eintrag.get("breite", 160)
+    h = round(b * bild.height / bild.width)
+    silhouette = bild.resize((round(b), h), Image.LANCZOS).getchannel("A")
+    silhouette = silhouette.point(lambda w: 255 if w > 12 else 0)
+    silhouette = silhouette.filter(ImageFilter.MaxFilter(2 * rand + 1))
+    gedreht = silhouette.rotate(-lage.get("pd", 0), expand=True, resample=Image.BICUBIC)
+
+    maske = Image.new("L", (W, H), 255)
+    maske.paste(ImageOps.invert(gedreht),
+                (round(lage["px"] - gedreht.width / 2),
+                 round(lage["py"] - gedreht.height / 2)),
+                gedreht)
+    return maske.filter(ImageFilter.GaussianBlur(3)).convert("RGB")
+
+
 def titelblock(titel, unterzeile, akzent, plattform):
     """
     Titel oben links. Die Spalte endet bei x = 330, dort beginnt das
@@ -721,9 +751,14 @@ def main():
                  ohne_geraet=a.ohne_geraet)
     rendern(svg, a.out)
     if a.nur_szene and _LAGE:
-        with open(os.path.splitext(a.out)[0] + ".json", "w", encoding="utf-8") as f:
+        stamm = os.path.splitext(a.out)[0]
+        with open(stamm + ".json", "w", encoding="utf-8") as f:
             json.dump(_LAGE, f, indent=2)
-        print("Lage des Logos notiert:", os.path.splitext(a.out)[0] + ".json")
+        print("Lage notiert:", stamm + ".json")
+        maske = geraetemaske(_LAGE)
+        if maske:
+            maske.save(stamm + "_maske.png")
+            print("Maske geschrieben:", stamm + "_maske.png")
     print("geschrieben:", a.out)
 
 
