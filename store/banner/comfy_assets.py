@@ -156,12 +156,28 @@ def hochladen(server, pfad):
     koerper = b"".join(teile)
     anfrage = urllib.request.Request(
         f"http://{server}/upload/image", data=koerper,
-        headers={"Content-Type": "multipart/form-data; boundary=" + grenze})
-    with urllib.request.urlopen(anfrage, timeout=60) as antwort:
-        return json.loads(antwort.read()).get("name", name)
+        headers={"Content-Type": "multipart/form-data; boundary=" + grenze,
+                 "Content-Length": str(len(koerper))})
+    try:
+        with urllib.request.urlopen(anfrage, timeout=60) as antwort:
+            return json.loads(antwort.read()).get("name", name)
+    except urllib.error.HTTPError as fehler:
+        # ComfyUI schreibt den Grund in den Rumpf; ohne ihn steht da nur
+        # "500 Internal Server Error" und man sucht im Dunkeln.
+        try:
+            grund = fehler.read().decode("utf-8", "replace")[:600]
+        except Exception:
+            grund = "(kein Rumpf)"
+        raise SystemExit(
+            f"Upload von {name} abgelehnt (HTTP {fehler.code}).\n"
+            f"ComfyUI sagt: {grund}\n\n"
+            "Ausweg ohne Upload: die Datei (und, falls vorhanden, ihre Maske)\n"
+            "von Hand in den input-Ordner von ComfyUI kopieren und dann\n"
+            "noch einmal mit --im-input starten.")
 
 
-def veredeln(server, vorlage, workflow_pfad, ziel, staerke, prompt, seed):
+def veredeln(server, vorlage, workflow_pfad, ziel, staerke, prompt, seed,
+             im_input=False):
     """
     Die fertige Szene noch einmal durch das Bildmodell schicken, aber nur
     leicht: So gleichen sich Licht, Schatten und Perspektive der einzeln
@@ -174,13 +190,19 @@ def veredeln(server, vorlage, workflow_pfad, ziel, staerke, prompt, seed):
     with open(workflow_pfad, encoding="utf-8") as f:
         workflow = json.load(f)
 
-    name = hochladen(server, vorlage)
-    print("hochgeladen als:", name)
     maske_pfad = os.path.splitext(vorlage)[0] + "_maske.png"
-    maske_name = None
-    if os.path.exists(maske_pfad):
-        maske_name = hochladen(server, maske_pfad)
-        print("Maske hochgeladen als:", maske_name)
+    if im_input:
+        # Die Dateien liegen schon im input-Ordner von ComfyUI
+        name = os.path.basename(vorlage)
+        maske_name = os.path.basename(maske_pfad) if os.path.exists(maske_pfad) else None
+        print("ohne Upload, benutze:", name, maske_name or "")
+    else:
+        name = hochladen(server, vorlage)
+        print("hochgeladen als:", name)
+        maske_name = None
+        if os.path.exists(maske_pfad):
+            maske_name = hochladen(server, maske_pfad)
+            print("Maske hochgeladen als:", maske_name)
     lader = [(kid, k) for kid, k in workflow.items() if k.get("class_type") == "LoadImage"]
     for kid, knoten in lader:
         titel = (knoten.get("_meta", {}).get("title") or "").lower()
@@ -244,6 +266,9 @@ def main():
     p.add_argument("--hintergrund", default="weiss", choices=["weiss", "gruen"])
     p.add_argument("--veredeln", default="",
                    help="eine fertige Szene noch einmal leicht durchs Modell schicken")
+    p.add_argument("--im-input", action="store_true",
+                   help="Vorlage und Maske liegen schon im input-Ordner von "
+                        "ComfyUI, kein Upload noetig")
     p.add_argument("--staerke", type=float, default=0.35,
                    help="wie frei das Modell dabei sein darf (0.2 vorsichtig, 0.5 viel)")
     p.add_argument("--img2img", default=None,
@@ -273,7 +298,7 @@ def main():
         veredeln(a.server, a.veredeln, workflow_pfad, ziel, a.staerke,
                  stil + ". top-down view of an electronics workbench with tools on a green "
                         "cutting mat, even light, consistent perspective",
-                 7)
+                 7, im_input=a.im_input)
         print("fertig:", ziel)
         return
 
