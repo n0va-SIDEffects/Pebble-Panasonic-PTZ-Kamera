@@ -101,6 +101,25 @@ Ein neues Werkzeug kommt genauso dazu: zeichnen, entlang +x um die eigene
 Mitte, und in `werkzeug_vorrat()` als `lang`, `kurz` oder `kram`
 eintragen.
 
+## Das Logo ins Geraet einbacken
+
+Aufgelegt sieht das Logo immer aufgeklebt aus - es hat weder die
+Woelbung des Gehaeuses noch dessen Licht. Ein kurzer Durchlauf, maskiert
+auf genau diese Stelle, backt es ins Material ein:
+
+```bash
+python3 make_desk_banner.py --projekt theremin --logo-vorlage \
+    --out logo_theremin.png
+python3 comfy_assets.py --veredeln logo_theremin.png --staerke 0.25
+```
+
+Danach das Ergebnis freistellen und als Geraete-Asset in `ki/` ablegen -
+von da an traegt das Geraet das Logo selbst, und beim Zusammensetzen
+muss keins mehr aufgelegt werden.
+
+Die Staerke bleibt klein: Ueber etwa 0.3 erfindet das Modell das Logo
+neu, statt es einzuarbeiten.
+
 ## Der Durchlauf durchs Bildmodell
 
 Die Bildteile entstehen einzeln und bringen jeder sein eigenes Licht

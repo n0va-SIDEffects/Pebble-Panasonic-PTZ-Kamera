@@ -265,6 +265,47 @@ def geraetemaske(lage, rand=10):
     return maske.filter(ImageFilter.GaussianBlur(3)).convert("RGB")
 
 
+def logo_vorlage(projekt, logo_pfad, logo_farbe, akzent, ziel, rand=26):
+    """
+    Geraet mit aufgelegtem Logo als Vorlage fuer einen kurzen Durchlauf
+    durchs Bildmodell.
+
+    Aufgelegt sieht das Logo immer aufgeklebt aus - es hat weder die
+    Woelbung des Gehaeuses noch dessen Licht. Ein Durchlauf mit kleiner
+    Staerke, maskiert auf genau diese Stelle, backt es ins Material ein.
+    Daneben entsteht die passende Maske: weiss nur ueber dem Logo.
+    """
+    from PIL import ImageFilter
+    ki = ki_manifest()
+    if projekt not in ki or "logo" not in ki[projekt]:
+        raise SystemExit("Fuer " + projekt + " ist kein Logoplatz hinterlegt.")
+    eintrag = ki[projekt]
+    bild = Image.open(os.path.join(KI_ORDNER, eintrag.get("datei") or
+                                   eintrag["dateien"][0])).convert("RGBA")
+
+    # auf ein Vielfaches von 16 bringen, sonst stolpert der VAE
+    bw = (bild.width + 15) // 16 * 16
+    bh = (bild.height + 15) // 16 * 16
+    grund = Image.new("RGBA", (bw, bh), (255, 255, 255, 255))
+    grund.alpha_composite(bild, ((bw - bild.width) // 2, (bh - bild.height) // 2))
+
+    platz = eintrag["logo"]
+    logo = logo_faerben(logo_freistellen(logo_pfad), logo_farbe, akzent)
+    lb = round(platz["breite"] * bild.width)
+    logo = logo.resize((lb, max(1, round(lb * logo.height / logo.width))), Image.LANCZOS)
+    x = round(platz["x"] * bild.width) + (bw - bild.width) // 2
+    y = round(platz["y"] * bild.height) + (bh - bild.height) // 2
+    grund.alpha_composite(logo, (x, y))
+    grund.convert("RGB").save(ziel)
+
+    maske = Image.new("L", (bw, bh), 0)
+    ImageDraw.Draw(maske).rectangle(
+        [x - rand, y - rand, x + logo.width + rand, y + logo.height + rand], fill=255)
+    maske.filter(ImageFilter.GaussianBlur(rand / 3)).convert("RGB").save(
+        os.path.splitext(ziel)[0] + "_maske.png")
+    return ziel
+
+
 def titelblock(titel, unterzeile, akzent, plattform):
     """
     Titel oben links. Die Spalte endet bei x = 330, dort beginnt das
@@ -777,8 +818,8 @@ def banner(projekt, shot, titel, unterzeile, plattform, logo_pfad, seed,
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--projekt", required=True, choices=sorted(scene.PROJEKTE))
-    p.add_argument("--shot", required=True)
-    p.add_argument("--titel", required=True)
+    p.add_argument("--shot", default="")
+    p.add_argument("--titel", default="")
     p.add_argument("--unterzeile", default="")
     p.add_argument("--plattform", default="",
                    help="Zeile unter dem Titel; leer heisst: aus der Uhr ableiten")
@@ -795,6 +836,9 @@ def main():
     p.add_argument("--nur-szene", action="store_true",
                    help="ohne Uhr und Titel - Vorlage fuer den Durchlauf "
                         "durch das Bildmodell")
+    p.add_argument("--logo-vorlage", action="store_true",
+                   help="Geraet mit aufgelegtem Logo plus Maske ausgeben, um das "
+                        "Logo per Bildmodell ins Material einzubacken")
     p.add_argument("--ohne-geraet", action="store_true",
                    help="mit --nur-szene: das Geraet weglassen, damit es beim "
                         "Durchlauf durchs Modell nicht umgedeutet wird")
@@ -813,6 +857,20 @@ def main():
     if a.assets:
         global UHREN
         UHREN = a.assets
+
+    if not a.logo_vorlage and not (a.shot and a.titel):
+        raise SystemExit("--shot und --titel werden gebraucht "
+                         "(ausser bei --logo-vorlage)")
+
+    if a.logo_vorlage:
+        farbe = a.logo_farbe
+        if farbe == "auto":
+            farbe = LOGO_FARBE_JE_PROJEKT.get(a.projekt, "original")
+        akzent = a.akzent or AKZENTE.get(a.projekt, "#35b6f0")
+        logo_vorlage(a.projekt, a.logo, farbe, akzent, a.out)
+        print("geschrieben:", a.out)
+        print("Maske:", os.path.splitext(a.out)[0] + "_maske.png")
+        return
 
     farben = "auto"
     if a.uhr_gehaeuse or a.uhr_band:

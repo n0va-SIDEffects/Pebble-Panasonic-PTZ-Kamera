@@ -135,6 +135,36 @@
       "breite": 640,
       "hoehe": 640,
       "seed": 45
+    },
+    "tisch_2": {
+      "was": "seen straight from directly above, perfectly top-down, camera pointing straight down: a dark blue grey self-healing cutting mat with a fine grid and a measurement scale, worn surface with faint scalpel cuts, filling almost the whole frame and running off the right and bottom edges, pale birch plywood workbench visible only along the top and left edge, no table legs, no room, no horizon, no perspective, flat overhead view, soft even light",
+      "breite": 1152,
+      "hoehe": 512,
+      "seed": 5,
+      "freigestellt": false
+    },
+    "tisch_3": {
+      "was": "seen straight from directly above, perfectly top-down, camera pointing straight down: a dark green self-healing cutting mat with a fine grid and a measurement scale, heavily used surface with many scalpel cuts and scratches, filling almost the whole frame and running off the right and bottom edges, weathered dark oak workbench planks visible only along the top and left edge, no table legs, no room, no horizon, no perspective, flat overhead view, soft even light",
+      "breite": 1152,
+      "hoehe": 512,
+      "seed": 6,
+      "freigestellt": false
+    },
+    "messer_2": {
+      "was": "a grey metal utility knife with a black rubber grip and an extended snap-off blade",
+      "seed": 60
+    },
+    "loetkolben_2": {
+      "was": "a soldering iron with a dark grey handle, a knurled metal collar and a chisel tip, black cable curling away to the left",
+      "seed": 61
+    },
+    "dreher_rot_2": {
+      "was": "a stubby screwdriver with a transparent amber handle and a flat chrome tip",
+      "seed": 62
+    },
+    "dreher_blau_2": {
+      "was": "a long thin precision screwdriver with a black handle, a blue rotating cap and a phillips tip",
+      "seed": 63
     }
   }
 }
