@@ -86,6 +86,41 @@ Ein neues Werkzeug kommt genauso dazu: zeichnen, entlang +x um die eigene
 Mitte, und in `werkzeug_vorrat()` als `lang`, `kurz` oder `kram`
 eintragen.
 
+## Der Durchlauf durchs Bildmodell
+
+Die Bildteile entstehen einzeln und bringen jeder sein eigenes Licht
+mit. Ein Durchlauf durch Z-Image gleicht das an - Schatten fallen in
+eine Richtung, das Material bekommt Tiefe. Drei Schritte:
+
+```bash
+# 1. Szene bauen: ohne Uhr und Titel, dafuer mit Maske
+python3 make_desk_banner.py --projekt theremin --nur-szene \
+    --shot ../release/screenshots_en/03_playing_sine.png \
+    --titel "Theremin" --seed 7 --out szene.png
+
+# 2. Durchs Modell schicken (findet die Maske von allein)
+python3 comfy_assets.py --veredeln szene.png --staerke 0.45
+
+# 3. Uhr, Titel und Logo scharf obendrauf
+python3 make_desk_banner.py --projekt theremin --szene szene_veredelt.png \
+    --shot ../release/screenshots_en/03_playing_sine.png \
+    --titel "Theremin" --unterzeile "PLAY IT WITH YOUR WRIST" \
+    --seed 7 --out banner_720x320.png
+```
+
+Der **gleiche Seed in Schritt 1 und 3** ist Pflicht, sonst passt die
+Lage des Logos nicht mehr.
+
+Was nicht durchs Modell darf: Screenshot und Titel (beide wuerden
+unlesbar), das Logo (wird zum Fleck) und das Geraet selbst - aus einem
+Theremin wurde im Versuch ein Effektgeraet mit Leuchtdioden. Titel, Uhr
+und Logo kommen deshalb hinterher; das Geraet bleibt in der Vorlage,
+wird aber von der Maske geschuetzt.
+
+Ohne Maske entsteht an der Stelle des Geraets ein Loch, das das Modell
+nach eigenem Gutduenken fuellt. Die Maske schreibt `--nur-szene` von
+selbst daneben.
+
 ## Farbvarianten der Uhr
 
 Die Form kommt immer aus einer echten Aufnahme (`assets/`), nur die Farbe
