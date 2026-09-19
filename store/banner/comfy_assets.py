@@ -149,10 +149,13 @@ def hochladen(server, pfad):
                   'Content-Disposition: form-data; name="image"; filename="' + name + '"\r\n'
                   "Content-Type: image/png\r\n\r\n").encode("utf-8"))
     teile.append(inhalt)
-    teile.append(("\r\n--" + grenze + "\r\n"
-                  'Content-Disposition: form-data; name="overwrite"\r\n\r\n'
-                  "true\r\n"
-                  "--" + grenze + "--\r\n").encode("utf-8"))
+    # type und subfolder erwarten manche ComfyUI-Fassungen ausdruecklich;
+    # fehlen sie, quittiert der Upload mit einem nackten 500er.
+    for feld, wert in (("overwrite", "true"), ("type", "input"), ("subfolder", "")):
+        teile.append(("\r\n--" + grenze + "\r\n"
+                      'Content-Disposition: form-data; name="' + feld + '"\r\n\r\n'
+                      + wert).encode("utf-8"))
+    teile.append(("\r\n--" + grenze + "--\r\n").encode("utf-8"))
     koerper = b"".join(teile)
     anfrage = urllib.request.Request(
         f"http://{server}/upload/image", data=koerper,
@@ -171,6 +174,8 @@ def hochladen(server, pfad):
         raise SystemExit(
             f"Upload von {name} abgelehnt (HTTP {fehler.code}).\n"
             f"ComfyUI sagt: {grund}\n\n"
+            "Den wirklichen Grund schreibt ComfyUI in sein eigenes Fenster -\n"
+            "dort steht der Stacktrace.\n\n"
             "Ausweg ohne Upload: die Datei (und, falls vorhanden, ihre Maske)\n"
             "von Hand in den input-Ordner von ComfyUI kopieren und dann\n"
             "noch einmal mit --im-input starten.")
