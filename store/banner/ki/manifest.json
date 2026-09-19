@@ -1,7 +1,10 @@
 {
   "_hinweis": "KI-Assets. 'breite' ist die Zielbreite in Bannereinheiten (720 x 320), 'dreh' richtet ein Werkzeug entlang +x aus. Ein Eintrag mit 'dateien' statt 'datei' hat mehrere Fassungen - der Seed waehlt eine davon.",
   "tisch": {
-    "datei": "z_tisch.png",
+    "dateien": [
+      "z_tisch.png",
+      "z_tisch_2.png"
+    ],
     "zoom": 1.0,
     "x": 0,
     "y": 0

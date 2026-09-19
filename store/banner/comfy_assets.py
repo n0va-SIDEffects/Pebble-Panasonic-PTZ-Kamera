@@ -329,7 +329,20 @@ def main():
         erzeugen(a.server, vorbereiten(vorlage, prompt, breite, hoehe, seed, "banner/" + name), roh)
         print("  erzeugt:", roh)
         if not eintrag.get("freigestellt", True):
-            os.replace(roh, ziel)
+            try:
+                os.replace(roh, ziel)
+            except OSError as fehler:
+                # Unter Windows scheitert das Verschieben, sobald die
+                # Zieldatei noch in einem Bildbetrachter offen ist.
+                # Kopieren geht dann meist trotzdem.
+                import shutil as _sh
+                try:
+                    _sh.copyfile(roh, ziel)
+                    print("  verschoben ging nicht, kopiert:", fehler)
+                except OSError as zweiter:
+                    print("  konnte nicht gespeichert werden:", zweiter)
+                    print("    Rohbild liegt hier:", roh)
+                    continue
             continue
         try:
             freistellen(roh, ziel, eintrag.get("hintergrund", a.hintergrund))

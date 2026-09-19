@@ -93,9 +93,14 @@ def ki_bild(eintrag, breite=None, dreh=0, logo_uri=None, zufall=None):
     return f'<g filter="url(#schatten_weich)">{innen}</g>'
 
 
-def ki_untergrund(eintrag):
-    """Tischbild als Hintergrund, so skaliert dass die Matte das Bild fuellt."""
-    bild = Image.open(os.path.join(KI_ORDNER, eintrag["datei"])).convert("RGB")
+def ki_untergrund(eintrag, zufall=None):
+    """
+    Tischbild als Hintergrund. Liegen mehrere Tische vor, waehlt der Seed
+    einen davon - so wechselt auch der Untergrund von App zu App.
+    """
+    dateien = eintrag.get("dateien")
+    datei = (zufall or random).choice(dateien) if dateien else eintrag["datei"]
+    bild = Image.open(os.path.join(KI_ORDNER, datei)).convert("RGB")
     zoom = eintrag.get("zoom", 1.0)
     b = W * zoom
     h = b * bild.height / bild.width
